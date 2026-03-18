@@ -589,16 +589,20 @@ const IMG_BACK  = 'https://image.tmdb.org/t/p/w1280';
 const VIDKING   = 'https://www.vidking.net/embed';
 const VK_P      = 'color=00e050&autoPlay=true&nextEpisode=true&episodeSelector=true';
 
-// Firebase init (skip if config not set)
-let app, auth, db, currentUser = null;
-const FB_READY = true; // real Firebase config
-if(FB_READY){
+// Firebase init
+let auth, db, currentUser = null;
+let app;
+try {
   app  = initializeApp(FB_CONFIG);
-  getAnalytics(app); // enables Firebase Analytics
+  try { getAnalytics(app); } catch(e) {}
   auth = getAuth(app);
   db   = getFirestore(app);
   onAuthStateChanged(auth, onUser);
+  console.log('Firebase ready ✅');
+} catch(e) {
+  console.error('Firebase init failed:', e);
 }
+const FB_READY = !!auth;
 
 // ── State ──
 let activeItem = null, activeType = 'movie', seasons = [], isSignUp = false;
@@ -961,7 +965,7 @@ document.getElementById('authToggle').addEventListener('click', () => {
 });
 
 document.getElementById('btnGoogle').addEventListener('click', async () => {
-  if(!FB_READY){ showToast('Configure Firebase first!'); return; }
+  if(!auth){ showToast('Firebase not ready — check console'); return; }
   try{
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
@@ -970,7 +974,7 @@ document.getElementById('btnGoogle').addEventListener('click', async () => {
 });
 
 document.getElementById('btnEmail').addEventListener('click', async () => {
-  if(!FB_READY){ showToast('Configure Firebase first!'); return; }
+  if(!auth){ showToast('Firebase not ready — check console'); return; }
   const email = document.getElementById('authEmail').value.trim();
   const pass  = document.getElementById('authPass').value;
   const errEl = document.getElementById('authErr');
@@ -984,7 +988,7 @@ document.getElementById('btnEmail').addEventListener('click', async () => {
 
 document.getElementById('btnSkip').addEventListener('click', hideAuth);
 document.getElementById('umSignOut').addEventListener('click', async () => {
-  if(FB_READY && auth) await signOut(auth);
+  if(auth) await signOut(auth);
   currentUser = null; watchHistory = []; watchlist = [];
   updateUserUI(null);
   closeUserMenu();
@@ -1207,7 +1211,7 @@ if('serviceWorker' in navigator){
 // ── BOOT ──
 loadHome();
 // Show auth prompt after 3s if not signed in and Firebase is configured
-if(FB_READY){
+if(auth){
   setTimeout(() => { if(!currentUser) showAuth(); }, 3000);
 }
 </script>
