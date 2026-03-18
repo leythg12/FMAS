@@ -563,27 +563,23 @@ main{padding-top:calc(var(--header-h) + var(--safe-top));min-height:100vh}
 
 <!-- Firebase -->
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp }  from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
+import { getAnalytics }   from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js';
 import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, signOut, onAuthStateChanged }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
 
-/* ════════════════════════════════════════
-   🔧 FIREBASE CONFIG — replace with yours!
-   Get it free at https://firebase.google.com
-   Create project → Web app → copy config
-════════════════════════════════════════ */
 const FB_CONFIG = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyBTCXiCSK91ajcC2DBqwakAVn-GEYWnd4s",
+  authDomain:        "freemoviesandserie.firebaseapp.com",
+  projectId:         "freemoviesandserie",
+  storageBucket:     "freemoviesandserie.firebasestorage.app",
+  messagingSenderId: "1070312136314",
+  appId:             "1:1070312136314:web:823ba802edd1bb6c6125c3",
+  measurementId:     "G-CGX4JNY1GJ"
 };
-/* ════════════════════════════════════════ */
 
 const TMDB      = 'https://api.themoviedb.org/3';
 const TMDB_KEY  = '02e182cf0f2f661b979789ec44ce9604';
@@ -595,9 +591,10 @@ const VK_P      = 'color=00e050&autoPlay=true&nextEpisode=true&episodeSelector=t
 
 // Firebase init (skip if config not set)
 let app, auth, db, currentUser = null;
-const FB_READY = FB_CONFIG.apiKey !== 'YOUR_API_KEY';
+const FB_READY = true; // real Firebase config
 if(FB_READY){
   app  = initializeApp(FB_CONFIG);
+  getAnalytics(app); // enables Firebase Analytics
   auth = getAuth(app);
   db   = getFirestore(app);
   onAuthStateChanged(auth, onUser);
