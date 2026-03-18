@@ -123,6 +123,8 @@
     .channel-badge{background:rgba(0,180,60,.12);border:1px solid rgba(0,180,60,.2);border-radius:6px;padding:3px 9px;font-size:.72rem;color:var(--g6)}
     .event-sport-icon{font-size:1.8rem;margin-bottom:8px}
 
+    .event-card.live-card{border-color:rgba(255,68,68,.35);background:rgba(60,0,0,.25)}
+    .event-card.live-card:hover{border-color:rgba(255,68,68,.6)}
     /* F1 specific */
     .f1-card{border-color:rgba(220,0,0,.2)}
     .f1-card:hover{border-color:rgba(220,0,0,.5);box-shadow:0 10px 36px rgba(220,0,0,.15)}
@@ -536,84 +538,162 @@
   }
 
   /* ── FOOTBALL via DaddyLive schedule ── */
+  let allFootballEvents = []; // store for filtering
+
   async function loadFootball(){
-    const grid=document.getElementById('eventsGrid');
-    grid.innerHTML=Array(6).fill(0).map(()=>`<div class="skel-event"></div>`).join('');
+    const grid = document.getElementById('eventsGrid');
+    document.getElementById('sportsEmpty').style.display = 'none';
+    grid.innerHTML = Array(8).fill(0).map(()=>`<div class="skel-event"></div>`).join('');
 
-    try{
-      // Fetch today's schedule through CORS proxy
-      const url=`${CORS_PROXY}${encodeURIComponent(DADDY_BASE+'/schedule.php')}`;
-      const r=await fetch(url);
-      const text=await r.text();
+    // Inject search bar above grid if not already there
+    if(!document.getElementById('footballSearch')){
+      const bar = document.createElement('div');
+      bar.style.cssText = 'margin-bottom:18px;position:relative;max-width:480px';
+      bar.innerHTML = `
+        <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="footballSearch" type="text" placeholder="Filter matches…"
+          style="width:100%;padding:11px 16px 11px 40px;background:rgba(0,40,16,.7);border:1.5px solid rgba(0,200,80,.22);border-radius:100px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;"
+          oninput="filterFootball(this.value)"/>
+        <span id="matchCount" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:.75rem;color:var(--muted)"></span>`;
+      grid.parentNode.insertBefore(bar, grid);
+    }
 
-      // Parse schedule JSON from the response
-      let schedule;
-      try{ schedule=JSON.parse(text); }
-      catch{
-        // Try extracting JSON from HTML
-        const match=text.match(/var\s+schedule\s*=\s*(\{[\s\S]*?\});/);
-        if(match) schedule=JSON.parse(match[1]);
-        else throw new Error('Could not parse schedule');
-      }
+    // Try multiple CORS proxies in order
+    const SCHEDULE_URL = DADDY_BASE + '/schedule.php';
+    const proxies = [
+      `https://corsproxy.io/?url=${encodeURIComponent(SCHEDULE_URL)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(SCHEDULE_URL)}`,
+      `https://proxy.cors.sh/${SCHEDULE_URL}`,
+    ];
 
-      // Collect all football & f1 events from today
-      const events=[];
-      const todayKey=Object.keys(schedule)[0]; // first key = today
-      const todayData=schedule[todayKey]||{};
+    let schedule = null;
+    for(const proxy of proxies){
+      try{
+        const r = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
+        if(!r.ok) continue;
+        const text = await r.text();
+        // Try direct JSON parse
+        try{ schedule = JSON.parse(text); break; }
+        catch{
+          // Try extracting from HTML/JS variable
+          const m = text.match(/(?:var\s+schedule|scheduleData)\s*=\s*(\{[\s\S]*?\});/);
+          if(m){ try{ schedule = JSON.parse(m[1]); break; }catch{} }
+        }
+      } catch(e){ console.warn('Proxy failed:', proxy, e); }
+    }
 
-      // Look for football category (may have various names)
-      for(const category of Object.keys(todayData)){
-        const lower=category.toLowerCase();
-        if(lower.includes('football') || lower.includes('soccer')){
-          for(const ev of todayData[category]){
-            events.push({...ev, sport:'football'});
+    if(!schedule){ renderFootballFallback(); return; }
+
+    // Collect ALL football events across ALL days in schedule
+    const events = [];
+    const footballKeywords = ['football','soccer','premier','league','champions','la liga','serie a','bundesliga','ligue','fa cup','copa','eredivisie','nation'];
+
+    for(const dayKey of Object.keys(schedule)){
+      const dayData = schedule[dayKey] || {};
+      for(const category of Object.keys(dayData)){
+        const lower = category.toLowerCase();
+        const isFootball = footballKeywords.some(k => lower.includes(k));
+        if(isFootball){
+          for(const ev of (dayData[category]||[])){
+            events.push({ ...ev, league: category, day: dayKey });
           }
         }
       }
-
-      renderFootballEvents(events);
-    } catch(e){
-      console.warn('Schedule fetch failed, using fallback:', e);
-      renderFootballFallback();
     }
+
+    // Sort: LIVE first, then by time
+    const now = new Date();
+    events.sort((a,b)=>{
+      const aLive = isEventLive(a.time||'', now) ? 0 : 1;
+      const bLive = isEventLive(b.time||'', now) ? 0 : 1;
+      if(aLive !== bLive) return aLive - bLive;
+      return (a.time||'').localeCompare(b.time||'');
+    });
+
+    allFootballEvents = events;
+    renderFootballEvents(events);
+  }
+
+  function filterFootball(query){
+    const q = query.toLowerCase().trim();
+    const filtered = q ? allFootballEvents.filter(ev =>
+      (ev.event||'').toLowerCase().includes(q) ||
+      (ev.league||'').toLowerCase().includes(q)
+    ) : allFootballEvents;
+    renderFootballEvents(filtered);
   }
 
   function renderFootballEvents(events){
-    const grid=document.getElementById('eventsGrid');
-    if(!events.length){ grid.innerHTML=''; document.getElementById('sportsEmpty').style.display='block'; return; }
-    const now=new Date();
+    const grid = document.getElementById('eventsGrid');
+    const countEl = document.getElementById('matchCount');
+    if(countEl) countEl.textContent = `${events.length} matches`;
 
-    grid.innerHTML=events.map(ev=>{
-      const channels=ev.channels||[];
-      const timeStr=ev.time||'';
-      const isLive=isEventLive(timeStr, now);
-      const isSoon=isEventSoon(timeStr, now);
-      const badge=isLive
-        ? `<span class="event-live-badge">● LIVE</span>`
-        : isSoon ? `<span class="event-soon-badge">SOON</span>` : '';
+    if(!events.length){
+      grid.innerHTML = '';
+      document.getElementById('sportsEmpty').style.display = 'block';
+      return;
+    }
+    document.getElementById('sportsEmpty').style.display = 'none';
 
-      const chHtml=channels.slice(0,4).map(c=>`<span class="channel-badge">${esc(c.channel_name)}</span>`).join('');
-      const chData=JSON.stringify(channels.map(c=>({name:c.channel_name,id:c.channel_id}))).replace(/"/g,'&quot;');
+    const now = new Date();
 
-      return `<div class="event-card" onclick='openSportsModal("${esc(ev.event||'Match')}", ${chData})'>
-        <div class="event-header">
-          <span class="event-time">🕐 ${timeStr} UK</span>
-          ${badge}
-        </div>
-        <div class="event-sport-icon">⚽</div>
-        <div class="event-name">${esc(ev.event||'Football Match')}</div>
-        <div class="event-channels">${chHtml}${channels.length>4?`<span class="channel-badge">+${channels.length-4}</span>`:''}</div>
+    // Group by league
+    const byLeague = {};
+    for(const ev of events){
+      const league = ev.league || 'Football';
+      if(!byLeague[league]) byLeague[league] = [];
+      byLeague[league].push(ev);
+    }
+
+    let html = '';
+    for(const [league, matches] of Object.entries(byLeague)){
+      html += `<div style="grid-column:1/-1;margin:12px 0 4px;display:flex;align-items:center;gap:10px">
+        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;color:var(--g6)">⚽ ${esc(league)}</span>
+        <span style="font-size:.75rem;color:var(--muted)">${matches.length} match${matches.length>1?'es':''}</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
       </div>`;
-    }).join('');
+
+      for(const ev of matches){
+        const channels = ev.channels || [];
+        const allCh = [...channels, ...(ev.channels2||[])];
+        const timeStr = ev.time || '';
+        const isLive = isEventLive(timeStr, now);
+        const isSoon = isEventSoon(timeStr, now);
+        const badge = isLive
+          ? `<span class="event-live-badge">● LIVE</span>`
+          : isSoon ? `<span class="event-soon-badge">SOON</span>` : '';
+
+        const chHtml = allCh.slice(0,5).map(c=>`<span class="channel-badge">${esc(c.channel_name)}</span>`).join('');
+        const chData = JSON.stringify(allCh.map(c=>({name:c.channel_name,id:c.channel_id}))).replace(/"/g,'&quot;');
+        const title = esc(ev.event||'Match');
+
+        html += `<div class="event-card${isLive?' live-card':''}" onclick='openSportsModal("${title}",${chData})'>
+          <div class="event-header">
+            <span class="event-time">🕐 ${timeStr||'TBD'} UK</span>
+            ${badge}
+          </div>
+          <div class="event-name" style="margin-top:4px">${title}</div>
+          <div class="event-channels" style="margin-top:8px">
+            ${chHtml}
+            ${allCh.length>5?`<span class="channel-badge">+${allCh.length-5} more</span>`:''}
+            ${!allCh.length?`<span style="font-size:.75rem;color:var(--muted)">No stream available yet</span>`:''}
+          </div>
+        </div>`;
+      }
+    }
+
+    grid.innerHTML = html;
   }
 
   function renderFootballFallback(){
-    // Static fallback: link directly to DaddyLive
-    const grid=document.getElementById('eventsGrid');
-    grid.innerHTML=`<div class="event-card" onclick="window.open('${DADDY_BASE}','_blank')" style="grid-column:1/-1;text-align:center;padding:32px">
-      <div class="event-sport-icon">⚽</div>
-      <div class="event-name">View Today's Live Football Schedule</div>
-      <p style="color:var(--muted);font-size:.85rem;margin-top:8px">Click to open DaddyLive — all matches available there</p>
+    const grid = document.getElementById('eventsGrid');
+    grid.innerHTML = `<div class="event-card" style="grid-column:1/-1;text-align:center;padding:36px 24px">
+      <div style="font-size:2.5rem;margin-bottom:12px">📡</div>
+      <div class="event-name">Could not load schedule</div>
+      <p style="color:var(--muted);font-size:.85rem;margin:10px 0 16px;line-height:1.6">The schedule proxy is temporarily unavailable.<br/>Click below to view all matches directly on DaddyLive.</p>
+      <button onclick="window.open('${DADDY_BASE}','_blank')" style="background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:100px;padding:10px 24px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">
+        Open DaddyLive →
+      </button>
     </div>`;
   }
 
