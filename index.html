@@ -1,227 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FMAS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <style>
-    :root{
-      --g0:#001a0a;--g1:#002e12;--g2:#004d1e;--g3:#00832e;--g4:#00b840;
-      --g5:#00e050;--g6:#6fffa0;--text:#e6fff0;--muted:#5aae78;
-      --border:rgba(0,200,80,0.15);--glow:0 0 28px rgba(0,200,80,0.3);
-      --red:#ff4444;--yellow:#ffd700;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    body{background:var(--g0);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
-    body::before{content:'';position:fixed;inset:0;
-      background-image:linear-gradient(rgba(0,180,60,.04)1px,transparent 1px),linear-gradient(90deg,rgba(0,180,60,.04)1px,transparent 1px);
-      background-size:44px 44px;pointer-events:none;z-index:0}
-    body::after{content:'';position:fixed;top:-150px;right:-150px;width:600px;height:600px;
-      background:radial-gradient(circle,rgba(0,200,80,.13)0%,transparent 70%);pointer-events:none;z-index:0}
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FMAS – Free Movies and Series</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --g0:#001a0a;--g1:#002e12;--g2:#004d1e;--g3:#00832e;--g4:#00b840;
+  --g5:#00e050;--g6:#6fffa0;--text:#e6fff0;--muted:#5aae78;
+  --border:rgba(0,200,80,.15);--glow:0 0 28px rgba(0,200,80,.3);
+  --red:#ff4444;--yellow:#ffd700;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--g0);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,180,60,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,60,.04) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;top:-150px;right:-150px;width:600px;height:600px;background:radial-gradient(circle,rgba(0,200,80,.13) 0%,transparent 70%);pointer-events:none;z-index:0}
 
-    /* ── SETUP ── */
-    #setup{position:fixed;inset:0;z-index:999;background:var(--g0);display:flex;align-items:center;justify-content:center;padding:20px}
-    .setup-card{background:rgba(0,46,18,.75);border:1.5px solid rgba(0,200,80,.25);border-radius:22px;padding:42px 38px;width:100%;max-width:500px;backdrop-filter:blur(18px);text-align:center;animation:fadeUp .4s ease}
-    .setup-icon{font-size:3rem;margin-bottom:14px}
-    .setup-card h2{font-family:'Syne',sans-serif;font-size:1.55rem;font-weight:800;margin-bottom:8px}
-    .setup-card p{color:var(--muted);font-size:.92rem;line-height:1.65;margin-bottom:18px}
-    .setup-steps{text-align:left;margin:0 0 22px;padding:0;list-style:none}
-    .setup-steps li{display:flex;gap:10px;align-items:flex-start;color:var(--muted);font-size:.87rem;line-height:1.55;margin-bottom:8px}
-    .setup-steps li::before{content:attr(data-n);min-width:22px;height:22px;border-radius:50%;background:rgba(0,180,60,.2);border:1px solid rgba(0,180,60,.35);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--g6);flex-shrink:0;margin-top:1px}
-    .setup-steps a{color:var(--g5);text-decoration:none}
-    .sample-key{display:inline-block;background:rgba(0,180,60,.12);border:1px solid rgba(0,180,60,.3);border-radius:6px;padding:2px 8px;font-family:monospace;font-size:.82rem;color:var(--g6);cursor:pointer;transition:background .2s;user-select:all}
-    .sample-key:hover{background:rgba(0,180,60,.22)}
-    .key-input{width:100%;padding:14px 18px;background:rgba(0,20,8,.85);border:1.5px solid rgba(0,200,80,.28);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.97rem;outline:none;margin-bottom:10px;transition:border-color .2s,box-shadow .2s}
-    .key-input:focus{border-color:var(--g4);box-shadow:var(--glow)}
-    .key-input::placeholder{color:var(--muted)}
-    .key-err{color:#ff7070;font-size:.83rem;margin-bottom:10px;display:none;min-height:18px}
-    .btn-primary{width:100%;padding:14px;background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:12px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:opacity .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;gap:8px}
-    .btn-primary:hover:not(:disabled){box-shadow:0 4px 24px rgba(0,180,60,.5)}
-    .btn-primary:disabled{opacity:.65;cursor:not-allowed}
-    .setup-note{color:var(--muted);font-size:.75rem;margin-top:14px;line-height:1.5}
+/* SETUP */
+#setup{position:fixed;inset:0;z-index:999;background:var(--g0);display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-card{background:rgba(0,46,18,.8);border:1.5px solid rgba(0,200,80,.25);border-radius:22px;padding:42px 38px;width:100%;max-width:500px;backdrop-filter:blur(18px);text-align:center}
+.setup-card h2{font-family:'Syne',sans-serif;font-size:1.55rem;font-weight:800;margin-bottom:8px}
+.setup-card p{color:var(--muted);font-size:.92rem;line-height:1.65;margin-bottom:18px}
+.setup-steps{text-align:left;margin:0 0 22px;padding:0;list-style:none}
+.setup-steps li{display:flex;gap:10px;align-items:flex-start;color:var(--muted);font-size:.87rem;line-height:1.55;margin-bottom:8px}
+.setup-steps li::before{content:attr(data-n);min-width:22px;height:22px;border-radius:50%;background:rgba(0,180,60,.2);border:1px solid rgba(0,180,60,.35);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--g6);flex-shrink:0;margin-top:1px}
+.setup-steps a{color:var(--g5);text-decoration:none}
+.sample-key{display:inline-block;background:rgba(0,180,60,.12);border:1px solid rgba(0,180,60,.3);border-radius:6px;padding:2px 8px;font-family:monospace;font-size:.82rem;color:var(--g6);cursor:pointer}
+.key-input{width:100%;padding:14px 18px;background:rgba(0,20,8,.85);border:1.5px solid rgba(0,200,80,.28);border-radius:12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.97rem;outline:none;margin-bottom:10px;transition:border-color .2s}
+.key-input:focus{border-color:var(--g4);box-shadow:var(--glow)}
+.key-input::placeholder{color:var(--muted)}
+.key-err{color:#ff7070;font-size:.83rem;margin-bottom:10px;display:none}
+.btn-primary{width:100%;padding:14px;background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:12px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:disabled{opacity:.65;cursor:not-allowed}
+.setup-note{color:var(--muted);font-size:.75rem;margin-top:14px;line-height:1.5}
 
-    /* ── APP ── */
-    #app{display:none}
-    header{position:sticky;top:0;z-index:100;backdrop-filter:blur(22px);background:rgba(0,18,8,.88);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:66px}
-    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.35rem;letter-spacing:-.5px;color:var(--g5);text-decoration:none;display:flex;align-items:center;gap:9px}
-    .logo span{color:var(--text)}
-    .logo-mark{width:32px;height:32px;background:linear-gradient(135deg,var(--g4),var(--g5));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem}
-    nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-    .nav-btn{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;cursor:pointer;padding:6px 14px;border-radius:8px;transition:all .2s}
-    .nav-btn:hover,.nav-btn.active{color:var(--text);background:rgba(0,180,60,.12)}
-    .nav-btn.active{color:var(--g5)}
-    .nav-key{border:1px solid var(--border)!important;font-size:.78rem!important}
-    .nav-key:hover{border-color:var(--g4)!important}
+/* APP */
+#app{display:none}
+header{position:sticky;top:0;z-index:100;backdrop-filter:blur(22px);background:rgba(0,18,8,.88);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:66px;gap:12px;flex-wrap:wrap}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:-.5px;color:var(--g5);text-decoration:none;display:flex;align-items:center;gap:9px}
+.logo span{color:var(--text)}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--g4),var(--g5));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+.nav-btn{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:500;cursor:pointer;padding:7px 14px;border-radius:8px;transition:all .2s}
+.nav-btn:hover,.nav-btn.active{color:var(--text);background:rgba(0,180,60,.12)}
+.nav-btn.active{color:var(--g5)}
+.nav-key{border:1px solid var(--border)!important}
 
-    /* ── HERO ── */
-    .hero{position:relative;z-index:1;padding:60px 32px 44px;max-width:860px;margin:0 auto;text-align:center}
-    .badge{display:inline-flex;align-items:center;gap:7px;background:rgba(0,200,80,.1);border:1px solid rgba(0,200,80,.3);border-radius:100px;padding:4px 15px;font-size:.77rem;color:var(--g6);margin-bottom:20px;letter-spacing:.4px}
-    .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--g5);box-shadow:0 0 8px var(--g5);animation:blink 2s infinite}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
-    .hero h1{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4.5vw,3.4rem);font-weight:800;line-height:1.1;letter-spacing:-1.5px;margin-bottom:12px}
-    .hero h1 em{font-style:normal;color:var(--g5);text-shadow:0 0 36px rgba(0,224,80,.4)}
-    .hero-sub{color:var(--muted);font-size:1rem;margin-bottom:32px}
+/* HERO */
+.hero{position:relative;z-index:1;padding:64px 24px 44px;max-width:820px;margin:0 auto;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:7px;background:rgba(0,200,80,.1);border:1px solid rgba(0,200,80,.3);border-radius:100px;padding:4px 15px;font-size:.77rem;color:var(--g6);margin-bottom:20px}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--g5);box-shadow:0 0 8px var(--g5);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4.5vw,3.4rem);font-weight:800;line-height:1.1;letter-spacing:-1.5px;margin-bottom:12px}
+.hero h1 em{font-style:normal;color:var(--g5);text-shadow:0 0 36px rgba(0,224,80,.4)}
+.hero-sub{color:var(--muted);font-size:1rem;margin-bottom:32px}
 
-    /* ── SEARCH ── */
-    .search-wrap{position:relative;max-width:600px;margin:0 auto}
-    .s-icon{position:absolute;left:20px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
-    .s-input{width:100%;padding:16px 108px 16px 54px;background:rgba(0,40,16,.72);border:1.5px solid rgba(0,200,80,.25);border-radius:100px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:1rem;outline:none;backdrop-filter:blur(10px);transition:border-color .2s,box-shadow .2s}
-    .s-input::placeholder{color:var(--muted)}
-    .s-input:focus{border-color:var(--g4);box-shadow:var(--glow)}
-    .s-btn{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:100px;height:42px;padding:0 22px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.9rem;cursor:pointer;transition:box-shadow .2s;display:flex;align-items:center;justify-content:center;gap:6px;min-width:88px}
-    .s-btn:hover:not(:disabled){box-shadow:0 4px 20px rgba(0,180,60,.55)}
-    .s-btn:disabled{opacity:.65;cursor:not-allowed}
-    .tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
-    .tag{background:transparent;border:1px solid rgba(0,180,60,.25);border-radius:100px;padding:5px 14px;font-size:.8rem;color:var(--muted);cursor:pointer;transition:all .2s}
-    .tag:hover{background:rgba(0,180,60,.14);color:var(--g6);border-color:var(--g4)}
+/* SEARCH */
+.search-wrap{position:relative;max-width:580px;margin:0 auto}
+.s-icon{position:absolute;left:20px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.s-input{width:100%;padding:16px 108px 16px 54px;background:rgba(0,40,16,.72);border:1.5px solid rgba(0,200,80,.25);border-radius:100px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:1rem;outline:none;transition:border-color .2s,box-shadow .2s}
+.s-input::placeholder{color:var(--muted)}
+.s-input:focus{border-color:var(--g4);box-shadow:var(--glow)}
+.s-btn{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:100px;height:42px;padding:0 22px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.9rem;cursor:pointer;min-width:88px;display:flex;align-items:center;justify-content:center}
+.s-btn:disabled{opacity:.65;cursor:not-allowed}
+.tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.tag{background:transparent;border:1px solid rgba(0,180,60,.25);border-radius:100px;padding:5px 14px;font-size:.8rem;color:var(--muted);cursor:pointer;transition:all .2s}
+.tag:hover{background:rgba(0,180,60,.14);color:var(--g6);border-color:var(--g4)}
 
-    /* ── CONTENT ── */
-    .content{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:0 32px 64px}
-    .row-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
-    .section-label{font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:700}
-    .count{font-size:.85rem;color:var(--muted)}
-    .tabs{display:flex;gap:4px;background:rgba(0,30,12,.65);border:1px solid var(--border);border-radius:100px;padding:4px;width:fit-content}
-    .t-btn{padding:7px 20px;border-radius:100px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:500;cursor:pointer;transition:all .2s}
-    .t-btn.active{background:linear-gradient(135deg,var(--g2),var(--g3));color:var(--text);box-shadow:0 2px 12px rgba(0,150,50,.3)}
+/* CONTENT */
+.content{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:0 24px 64px}
+.section-label{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700}
+.count{font-size:.85rem;color:var(--muted)}
 
-    /* ── MOVIE GRID ── */
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:16px}
-    .card{background:rgba(0,50,20,.5);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;position:relative;transition:transform .2s,box-shadow .2s,border-color .2s}
-    .card:hover{transform:translateY(-5px);box-shadow:0 14px 42px rgba(0,180,60,.28);border-color:rgba(0,200,80,.45)}
-    .card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--g1)}
-    .card-no-img{width:100%;aspect-ratio:2/3;background:var(--g1);display:flex;align-items:center;justify-content:center;font-size:2.4rem;color:var(--muted)}
-    .card-over{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,15,6,.96)0%,transparent 52%);opacity:0;transition:opacity .2s;display:flex;align-items:center;justify-content:center}
-    .card:hover .card-over{opacity:1}
-    .play{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--g3),var(--g5));display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px rgba(0,220,80,.55)}
-    .card-info{padding:11px 12px}
-    .card-title{font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .card-meta{font-size:.74rem;color:var(--muted);margin-top:3px;display:flex;gap:8px}
-    .card-stars{color:var(--g5);font-weight:600}
+/* TABS */
+.tabs{display:flex;gap:4px;background:rgba(0,30,12,.65);border:1px solid var(--border);border-radius:100px;padding:4px;width:fit-content}
+.t-btn{padding:7px 20px;border-radius:100px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:500;cursor:pointer;transition:all .2s}
+.t-btn.active{background:linear-gradient(135deg,var(--g2),var(--g3));color:var(--text);box-shadow:0 2px 12px rgba(0,150,50,.3)}
 
-    /* ── SPORTS EVENTS ── */
-    #sportsView{display:none}
-    .sports-tabs{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap}
-    .sport-tab{padding:8px 20px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px}
-    .sport-tab:hover{border-color:var(--g4);color:var(--text)}
-    .sport-tab.active{background:linear-gradient(135deg,var(--g2),var(--g3));color:var(--text);border-color:transparent;box-shadow:0 2px 12px rgba(0,150,50,.3)}
-    .live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red);animation:blink 1.2s infinite;flex-shrink:0}
+/* MOVIE GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.card{background:rgba(0,50,20,.5);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;position:relative;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card:hover{transform:translateY(-5px);box-shadow:0 14px 42px rgba(0,180,60,.28);border-color:rgba(0,200,80,.45)}
+.card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--g1)}
+.card-no-img{width:100%;aspect-ratio:2/3;background:var(--g1);display:flex;align-items:center;justify-content:center;font-size:2.2rem;color:var(--muted)}
+.card-over{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,15,6,.96) 0%,transparent 52%);opacity:0;transition:opacity .2s;display:flex;align-items:center;justify-content:center}
+.card:hover .card-over{opacity:1}
+.play{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--g3),var(--g5));display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px rgba(0,220,80,.55)}
+.card-info{padding:10px 12px}
+.card-title{font-weight:600;font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-meta{font-size:.73rem;color:var(--muted);margin-top:3px;display:flex;gap:8px}
+.card-stars{color:var(--g5);font-weight:600}
 
-    .events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-    .event-card{background:rgba(0,40,16,.6);border:1px solid var(--border);border-radius:16px;padding:18px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-    .event-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--g3),var(--g5));opacity:0;transition:opacity .2s}
-    .event-card:hover{transform:translateY(-3px);box-shadow:0 10px 36px rgba(0,180,60,.2);border-color:rgba(0,200,80,.35)}
-    .event-card:hover::before{opacity:1}
-    .event-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-    .event-time{font-size:.78rem;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:5px}
-    .event-live-badge{background:var(--red);color:#fff;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:100px;letter-spacing:.5px;animation:pulse-badge 2s infinite}
-    @keyframes pulse-badge{0%,100%{opacity:1}50%{opacity:.7}}
-    .event-soon-badge{background:var(--yellow);color:#000;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:100px;}
-    .event-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:6px;line-height:1.3}
-    .event-channels{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-    .channel-badge{background:rgba(0,180,60,.12);border:1px solid rgba(0,180,60,.2);border-radius:6px;padding:3px 9px;font-size:.72rem;color:var(--g6)}
-    .event-sport-icon{font-size:1.8rem;margin-bottom:8px}
+/* SKELETONS */
+.skel{background:var(--g1);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.skel-body{width:100%;aspect-ratio:2/3;background:linear-gradient(90deg,var(--g1) 0%,var(--g2) 50%,var(--g1) 100%);background-size:200% 100%;animation:sweep 1.6s infinite}
+.skel-event{background:var(--g1);border:1px solid var(--border);border-radius:14px;height:120px;background:linear-gradient(90deg,var(--g1) 0%,var(--g2) 50%,var(--g1) 100%);background-size:200% 100%;animation:sweep 1.6s infinite}
+@keyframes sweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-    .event-card.live-card{border-color:rgba(255,68,68,.35);background:rgba(60,0,0,.25)}
-    .event-card.live-card:hover{border-color:rgba(255,68,68,.6)}
-    /* F1 specific */
-    .f1-card{border-color:rgba(220,0,0,.2)}
-    .f1-card:hover{border-color:rgba(220,0,0,.5);box-shadow:0 10px 36px rgba(220,0,0,.15)}
-    .f1-card::before{background:linear-gradient(90deg,#cc0000,#ff4444)}
+/* SPORTS */
+.sport-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px}
+.sport-tab{padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.sport-tab:hover{border-color:var(--g4);color:var(--text)}
+.sport-tab.active{background:linear-gradient(135deg,var(--g2),var(--g3));color:var(--text);border-color:transparent;box-shadow:0 2px 12px rgba(0,150,50,.3)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red);animation:blink 1.2s infinite;flex-shrink:0}
 
-    /* ── SKELETONS ── */
-    .skel{background:var(--g1);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-    .skel-body{width:100%;aspect-ratio:2/3;background:linear-gradient(90deg,var(--g1)0%,var(--g2)50%,var(--g1)100%);background-size:200% 100%;animation:sweep 1.6s infinite}
-    .skel-event{background:var(--g1);border:1px solid var(--border);border-radius:16px;height:130px;background:linear-gradient(90deg,var(--g1)0%,var(--g2)50%,var(--g1)100%);background-size:200% 100%;animation:sweep 1.6s infinite}
-    @keyframes sweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
+.events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.event-card{background:rgba(0,40,16,.6);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .2s;position:relative}
+.event-card:hover{transform:translateY(-3px);box-shadow:0 10px 36px rgba(0,180,60,.2);border-color:rgba(0,200,80,.35)}
+.event-card.live-card{border-color:rgba(255,68,68,.35);background:rgba(50,0,0,.25)}
+.event-card.f1-card{border-color:rgba(220,0,0,.25)}
+.event-card.f1-card:hover{border-color:rgba(220,0,0,.5)}
+.ev-time{font-size:.76rem;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.ev-league{font-size:.7rem;color:var(--g5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.ev-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;line-height:1.3;margin-bottom:8px}
+.ev-teams{display:flex;align-items:center;gap:8px;background:rgba(0,180,60,.06);border-radius:8px;padding:7px 10px;font-size:.82rem}
+.ev-teams span{flex:1;font-weight:600}
+.ev-teams span:first-child{text-align:right}
+.ev-teams span:last-child{text-align:left}
+.ev-vs{font-size:.7rem;color:var(--muted);font-weight:700;flex-shrink:0}
+.ev-channels{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.ch-badge{background:rgba(0,180,60,.1);border:1px solid rgba(0,180,60,.2);border-radius:5px;padding:2px 8px;font-size:.7rem;color:var(--g6)}
+.live-badge{background:var(--red);color:#fff;font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:100px;letter-spacing:.5px}
+.soon-badge{background:var(--yellow);color:#000;font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:100px}
 
-    /* ── EMPTY / ERROR ── */
-    .empty{text-align:center;padding:64px 20px;color:var(--muted)}
-    .empty-icon{font-size:3rem;margin-bottom:12px}
-    .empty h3{font-family:'Syne',sans-serif;font-size:1.2rem;color:var(--text);margin-bottom:6px}
+/* INLINE PLAYER */
+#inlinePlayer{display:none;margin-top:28px}
+.player-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.player-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem}
+.player-meta{font-size:.8rem;color:var(--muted);margin-top:2px}
+.player-box{border:1px solid rgba(0,200,80,.2);border-radius:16px;overflow:hidden;background:#000}
+.player-box .aspect{aspect-ratio:16/9}
+.player-box iframe{width:100%;height:100%;border:none;display:block}
+.player-sources{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.src-btn{background:rgba(0,180,60,.1);border:1px solid rgba(0,180,60,.2);border-radius:7px;color:var(--g6);padding:5px 11px;font-size:.76rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+.src-btn:hover,.src-btn.active{background:rgba(0,180,60,.35)}
+.close-btn{background:rgba(220,50,50,.12);border:1px solid rgba(220,50,50,.25);border-radius:8px;color:#ff9090;padding:6px 14px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif}
 
-    /* ── MODAL ── */
-    .modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,8,3,.93);backdrop-filter:blur(14px);padding:24px;overflow-y:auto;align-items:flex-start;justify-content:center}
-    .modal.open{display:flex}
-    .m-box{background:var(--g1);border:1px solid rgba(0,200,80,.18);border-radius:22px;width:100%;max-width:980px;margin:36px auto;overflow:hidden;animation:fadeUp .3s ease}
-    .m-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border)}
-    .m-title{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700}
-    .m-close{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:background .2s}
-    .m-close:hover{background:rgba(220,50,50,.2)}
-    .player{aspect-ratio:16/9;background:#000}
-    .player iframe{width:100%;height:100%;border:none;display:block}
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,8,3,.93);backdrop-filter:blur(14px);padding:24px;overflow-y:auto}
+.modal.open{display:flex;align-items:flex-start;justify-content:center}
+.m-box{background:var(--g1);border:1px solid rgba(0,200,80,.18);border-radius:22px;width:100%;max-width:960px;margin:36px auto;overflow:hidden;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
+.m-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border)}
+.m-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700}
+.m-close{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:background .2s}
+.m-close:hover{background:rgba(220,50,50,.2)}
+.player-wrap{aspect-ratio:16/9;background:#000}
+.player-wrap iframe{width:100%;height:100%;border:none;display:block}
+.tv-bar{padding:12px 22px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border)}
+.tv-lbl{font-size:.84rem;color:var(--muted);font-weight:500}
+.tv-sel{background:var(--g0);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;outline:none}
+.m-body{display:flex;gap:22px;padding:22px}
+.m-poster{width:130px;flex-shrink:0;border-radius:10px;object-fit:cover}
+.m-info h2{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;margin-bottom:8px}
+.m-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.m-tag{background:rgba(0,180,60,.11);border:1px solid rgba(0,180,60,.2);border-radius:6px;padding:3px 9px;font-size:.73rem;color:var(--g6)}
+.m-overview{color:var(--muted);font-size:.88rem;line-height:1.67}
 
-    /* channel picker inside modal */
-    .channel-picker{padding:14px 22px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .ch-lbl{font-size:.82rem;color:var(--muted);font-weight:500;margin-right:4px}
-    .ch-btn{background:rgba(0,180,60,.1);border:1px solid rgba(0,180,60,.2);border-radius:8px;color:var(--g6);padding:5px 12px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
-    .ch-btn:hover,.ch-btn.active{background:linear-gradient(135deg,var(--g3),var(--g4));color:#fff;border-color:transparent}
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+.empty h3{font-family:'Syne',sans-serif;font-size:1.1rem;color:var(--text);margin-bottom:6px}
 
-    .tv-bar{padding:12px 22px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border)}
-    .tv-lbl{font-size:.84rem;color:var(--muted);font-weight:500}
-    .tv-sel{background:var(--g0);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:.84rem;cursor:pointer;outline:none}
-    .m-body{display:flex;gap:22px;padding:22px}
-    .m-poster{width:136px;flex-shrink:0;border-radius:10px;object-fit:cover}
-    .m-info h2{font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:700;margin-bottom:8px}
-    .m-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
-    .m-tag{background:rgba(0,180,60,.11);border:1px solid rgba(0,180,60,.2);border-radius:6px;padding:3px 10px;font-size:.74rem;color:var(--g6)}
-    .m-overview{color:var(--muted);font-size:.89rem;line-height:1.67}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.28);border-top-color:#fff;border-radius:50%;animation:rot .65s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
 
-    .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.28);border-top-color:#fff;border-radius:50%;animation:rot .65s linear infinite}
-    @keyframes rot{to{transform:rotate(360deg)}}
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:20px 24px;text-align:center;color:var(--muted);font-size:.79rem}
+footer a{color:var(--g5);text-decoration:none}
 
-    footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:22px 32px;text-align:center;color:var(--muted);font-size:.8rem}
-    footer a{color:var(--g5);text-decoration:none}
-
-    @media(max-width:700px){
-      header{padding:0 14px;height:auto;padding-top:10px;padding-bottom:10px;flex-wrap:wrap;gap:8px}
-      .hero{padding:36px 16px 28px}
-      .content{padding:0 14px 48px}
-      .grid{grid-template-columns:repeat(2,1fr);gap:11px}
-      .events-grid{grid-template-columns:1fr}
-      .m-body{flex-direction:column}
-      .m-poster{width:100%;max-height:190px;object-fit:contain}
-    }
-  </style>
+@media(max-width:600px){
+  header{padding:10px 14px;height:auto}
+  .hero{padding:36px 14px 28px}
+  .content{padding:0 14px 48px}
+  .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .events-grid{grid-template-columns:1fr}
+  .m-body{flex-direction:column}
+  .m-poster{width:100%;max-height:180px;object-fit:contain}
+}
+</style>
 </head>
 <body>
 
 <!-- SETUP -->
 <div id="setup">
   <div class="setup-card">
-    <div class="setup-icon">🎬</div>
+    <div style="font-size:3rem;margin-bottom:14px">🎬</div>
     <h2>Get your free TMDB key</h2>
-    <p>FMAS uses the free TMDB API for movies &amp; TV. Live sports work without any key!</p>
+    <p>FMAS uses TMDB for movies &amp; TV data. Live sports work without any key!</p>
     <ul class="setup-steps">
-      <li data-n="1">Create a free account at <a href="https://www.themoviedb.org/signup" target="_blank">themoviedb.org/signup</a></li>
+      <li data-n="1">Sign up at <a href="https://www.themoviedb.org/signup" target="_blank">themoviedb.org/signup</a></li>
       <li data-n="2">Verify your email and log in</li>
       <li data-n="3">Go to <a href="https://www.themoviedb.org/settings/api" target="_blank">Settings → API</a> and request a Developer key</li>
       <li data-n="4">Copy your <strong style="color:var(--text)">API Key (v3 auth)</strong></li>
-      <li data-n="5">Or use this sample key: <span class="sample-key" onclick="useSample()">02e182cf0f2f661b979789ec44ce9604</span> — You're welcome! 😄</li>
+      <li data-n="5">Or click the sample key: <span class="sample-key" id="sampleKeyBtn">02e182cf0f2f661b979789ec44ce9604</span></li>
     </ul>
     <input class="key-input" id="keyInput" type="text" placeholder="Paste your API key here…" autocomplete="off"/>
     <div class="key-err" id="keyErr"></div>
-    <button class="btn-primary" id="keyBtn" onclick="submitKey()">
-      <span id="keyBtnText">Enter FMAS →</span>
-    </button>
-    <p class="setup-note">Your key is saved only in your browser's localStorage and never sent anywhere except api.themoviedb.org.</p>
+    <button class="btn-primary" id="keyBtn"><span id="keyBtnTxt">Enter FMAS →</span></button>
+    <p class="setup-note">Key saved in your browser only — never sent anywhere except api.themoviedb.org.</p>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app">
+
   <header>
     <a class="logo" href="#">
       <div class="logo-mark">▶</div>
       Free Movies and<span>&nbsp;Series</span>
     </a>
     <nav>
-      <button class="nav-btn active" id="navMovies" onclick="showSection('movies')">🎬 Movies</button>
-      <button class="nav-btn" id="navTv" onclick="showSection('tv')">📺 TV Shows</button>
-      <button class="nav-btn" id="navSports" onclick="showSection('sports')">⚽ Live Sports</button>
-      <button class="nav-btn nav-key" onclick="resetKey()">🔑 Key</button>
+      <button class="nav-btn active" id="nb-movies">🎬 Movies</button>
+      <button class="nav-btn" id="nb-tv">📺 TV Shows</button>
+      <button class="nav-btn" id="nb-sports">⚽ Live Sports</button>
+      <button class="nav-btn nav-key" id="nb-key">🔑 Key</button>
     </nav>
   </header>
 
@@ -230,26 +224,26 @@
     <div class="hero">
       <div class="badge">Movies &amp; TV — Powered by Vidking</div>
       <h1>Watch <em>Anything,</em><br/>Anytime for Free</h1>
-      <p class="hero-sub">Search movies and TV shows — click to stream instantly.</p>
+      <p class="hero-sub">Search and stream movies &amp; TV shows instantly.</p>
       <div class="search-wrap">
         <svg class="s-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input class="s-input" id="searchInput" placeholder="Search movies, TV shows…" autocomplete="off"/>
-        <button class="s-btn" id="searchBtn" onclick="doSearch()">Search</button>
+        <button class="s-btn" id="searchBtn">Search</button>
       </div>
       <div class="tags">
-        <span class="tag" onclick="quickSearch('Inception')">Inception</span>
-        <span class="tag" onclick="quickSearch('Breaking Bad')">Breaking Bad</span>
-        <span class="tag" onclick="quickSearch('Dune')">Dune</span>
-        <span class="tag" onclick="quickSearch('Interstellar')">Interstellar</span>
-        <span class="tag" onclick="quickSearch('The Bear')">The Bear</span>
-        <span class="tag" onclick="quickSearch('Oppenheimer')">Oppenheimer</span>
+        <span class="tag" data-q="Inception">Inception</span>
+        <span class="tag" data-q="Breaking Bad">Breaking Bad</span>
+        <span class="tag" data-q="Dune">Dune</span>
+        <span class="tag" data-q="Interstellar">Interstellar</span>
+        <span class="tag" data-q="The Bear">The Bear</span>
+        <span class="tag" data-q="Oppenheimer">Oppenheimer</span>
       </div>
     </div>
     <div class="content">
-      <div class="row-head">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <div class="tabs">
-          <button class="t-btn active" id="tabMovie" onclick="switchMediaTab('movie')">🎬 Movies</button>
-          <button class="t-btn" id="tabTv2" onclick="switchMediaTab('tv')">📺 TV Shows</button>
+          <button class="t-btn active" id="tabMovie">🎬 Movies</button>
+          <button class="t-btn" id="tabTv">📺 TV Shows</button>
         </div>
         <div style="display:flex;align-items:baseline;gap:10px">
           <span class="section-label" id="sectionLabel">Trending Now</span>
@@ -257,7 +251,7 @@
         </div>
       </div>
       <div class="grid" id="grid"></div>
-      <div class="empty" id="empty" style="display:none">
+      <div class="empty" id="emptyMovies" style="display:none">
         <div class="empty-icon">🌿</div>
         <h3>Nothing found</h3>
         <p>Try a different search term</p>
@@ -265,59 +259,44 @@
     </div>
   </div>
 
-  <!-- SPORTS VIEW -->
+  <!-- SPORTS -->
   <div id="sportsView" style="display:none">
     <div class="content" style="padding-top:28px">
+      <div class="sport-tabs" id="sportTabs"></div>
 
-      <!-- Sport category tabs -->
-      <div class="sports-tabs" id="sportsTabs" style="margin-bottom:24px">
-        <button class="sport-tab active" onclick="selectSport('football',this)">⚽ Football</button>
-        <button class="sport-tab" onclick="selectSport('basketball',this)">🏀 Basketball</button>
-        <button class="sport-tab" onclick="selectSport('mma',this)">🥊 MMA / UFC</button>
-        <button class="sport-tab" onclick="selectSport('f1',this)">🏎️ Formula 1</button>
-        <button class="sport-tab" onclick="selectSport('baseball',this)">⚾ Baseball</button>
-        <button class="sport-tab" onclick="selectSport('hockey',this)">🏒 Hockey</button>
-        <button class="sport-tab" onclick="selectSport('tennis',this)">🎾 Tennis</button>
-        <button class="sport-tab" onclick="selectSport('rugby',this)">🏉 Rugby</button>
-      </div>
-
-      <!-- Filter + count bar -->
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
-        <div style="position:relative;flex:1;min-width:200px;max-width:420px">
-          <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+        <div style="position:relative;flex:1;min-width:180px;max-width:380px">
+          <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input id="sportsSearch" type="text" placeholder="Filter matches…"
-            style="width:100%;padding:10px 14px 10px 38px;background:rgba(0,40,16,.7);border:1.5px solid rgba(0,200,80,.22);border-radius:100px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;"
-            oninput="filterMatches(this.value)"/>
+            style="width:100%;padding:9px 14px 9px 36px;background:rgba(0,40,16,.7);border:1.5px solid rgba(0,200,80,.22);border-radius:100px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.87rem;outline:none"/>
         </div>
         <span id="matchCount" style="font-size:.82rem;color:var(--muted)"></span>
-        <button onclick="loadSports()" style="background:rgba(0,180,60,.1);border:1px solid rgba(0,200,80,.22);border-radius:8px;color:var(--g6);padding:8px 16px;font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif">↻ Refresh</button>
+        <button id="refreshBtn" style="background:rgba(0,180,60,.1);border:1px solid rgba(0,200,80,.2);border-radius:8px;color:var(--g6);padding:8px 14px;font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif">↻ Refresh</button>
       </div>
 
-      <!-- Events grid -->
       <div class="events-grid" id="eventsGrid"></div>
-      <div class="empty" id="sportsEmpty" style="display:none">
+      <div class="empty" id="emptySports" style="display:none">
         <div class="empty-icon">📡</div>
         <h3>No matches scheduled</h3>
         <p>Check back soon or try another sport</p>
       </div>
 
-      <!-- Inline stream player (shown when a match is clicked) -->
-      <div id="inlinePlayer" style="display:none;margin-top:28px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <!-- Inline player -->
+      <div id="inlinePlayer">
+        <div class="player-header">
           <div>
-            <div id="playerMatchTitle" style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem"></div>
-            <div id="playerMatchMeta" style="font-size:.8rem;color:var(--muted);margin-top:2px"></div>
+            <div class="player-title" id="playerTitle"></div>
+            <div class="player-meta" id="playerMeta"></div>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <span style="font-size:.8rem;color:var(--muted)">Source:</span>
-            <div id="playerSourceBtns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-            <button onclick="closeInlinePlayer()" style="background:rgba(220,50,50,.12);border:1px solid rgba(220,50,50,.25);border-radius:8px;color:#ff9090;padding:6px 14px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Close</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:.78rem;color:var(--muted)">Source:</span>
+            <div id="sourceBtns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+            <button class="close-btn" id="closePlayerBtn">✕ Close</button>
           </div>
         </div>
-        <div style="border:1px solid rgba(0,200,80,.2);border-radius:18px;overflow:hidden;background:#000">
-          <div style="aspect-ratio:16/9">
-            <iframe id="sportsPlayerFrame" style="width:100%;height:100%;border:none;display:block"
-              allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>
+        <div class="player-box">
+          <div class="aspect">
+            <iframe id="sportsFrame" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>
           </div>
         </div>
       </div>
@@ -325,19 +304,19 @@
     </div>
   </div>
 
-  <!-- MODAL (movies/tv) -->
+  <!-- MOVIE MODAL -->
   <div class="modal" id="modal">
     <div class="m-box">
       <div class="m-head">
         <span class="m-title" id="mTitle">—</span>
-        <button class="m-close" onclick="closeModal()">✕</button>
+        <button class="m-close" id="modalCloseBtn">✕</button>
       </div>
-      <div class="player"><iframe id="frame" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe></div>
+      <div class="player-wrap"><iframe id="movieFrame" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe></div>
       <div class="tv-bar" id="tvBar" style="display:none">
         <span class="tv-lbl">Season</span>
-        <select class="tv-sel" id="sSel" onchange="updateEps()"></select>
+        <select class="tv-sel" id="sSel"></select>
         <span class="tv-lbl">Episode</span>
-        <select class="tv-sel" id="eSel" onchange="loadEp()"></select>
+        <select class="tv-sel" id="eSel"></select>
       </div>
       <div class="m-body">
         <img class="m-poster" id="mPoster" src="" alt="" style="display:none"/>
@@ -350,489 +329,636 @@
     </div>
   </div>
 
-
-
   <footer>
-    FMAS &nbsp;·&nbsp; Movies &amp; TV via <a href="https://www.vidking.net" target="_blank">Vidking</a> &nbsp;·&nbsp;
-    Sports via <a href="https://dlstreams.top" target="_blank">DaddyLive</a> &nbsp;·&nbsp;
-    F1 data via <a href="https://openf1.org" target="_blank">OpenF1</a> &nbsp;·&nbsp;
-    Movie data via <a href="https://www.themoviedb.org" target="_blank">TMDB</a>
+    FMAS &nbsp;·&nbsp; Movies &amp; TV via <a href="https://www.vidking.net" target="_blank">Vidking</a>
+    &nbsp;·&nbsp; Sports via <a href="https://sportsrc.org" target="_blank">SportSRC</a> &amp; <a href="https://dlstreams.top" target="_blank">DaddyLive</a>
+    &nbsp;·&nbsp; Data from <a href="https://www.themoviedb.org" target="_blank">TMDB</a>
   </footer>
-</div>
+
+</div><!-- /app -->
 
 <script>
-  /* ═══════════════════════════════════════════
-     CONFIG
-  ═══════════════════════════════════════════ */
-  const VIDKING_PARAMS = 'color=00e050&autoPlay=true&nextEpisode=true&episodeSelector=true';
-  const DADDY_BASE     = 'https://dlstreams.top'; // primary domain
-  const CORS_PROXY     = 'https://corsproxy.io/?url=';
-  const TMDB           = 'https://api.themoviedb.org/3';
-  const IMG_SM         = 'https://image.tmdb.org/t/p/w342';
-  const IMG_LG         = 'https://image.tmdb.org/t/p/w500';
+'use strict';
 
-  let KEY        = '';
-  let mediaType  = 'movie';
-  let activeItem = null;
-  let seasons    = [];
-  let currentSection = 'movies';
-  let currentSport   = 'football';
+/* ══════════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════════ */
+const TMDB        = 'https://api.themoviedb.org/3';
+const IMG_SM      = 'https://image.tmdb.org/t/p/w342';
+const IMG_LG      = 'https://image.tmdb.org/t/p/w500';
+const VIDKING     = 'https://www.vidking.net/embed';
+const VK_PARAMS   = 'color=00e050&autoPlay=true&nextEpisode=true&episodeSelector=true';
+const SPORTSRC    = 'https://api.sportsrc.org';
+const DADDY       = 'https://dlstreams.top';
 
-  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+const SPORTS = [
+  { id:'football',   label:'⚽ Football'   },
+  { id:'basketball', label:'🏀 Basketball' },
+  { id:'mma',        label:'🥊 MMA / UFC'  },
+  { id:'f1',         label:'🏎️ F1'        },
+  { id:'baseball',   label:'⚾ Baseball'   },
+  { id:'hockey',     label:'🏒 Hockey'     },
+  { id:'tennis',     label:'🎾 Tennis'     },
+  { id:'rugby',      label:'🏉 Rugby'      },
+];
 
-  /* ═══ SETUP ═══ */
-  document.getElementById('keyInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitKey(); });
-  function useSample(){ document.getElementById('keyInput').value='02e182cf0f2f661b979789ec44ce9604'; }
+const F1_CHANNELS = [
+  {name:'Sky Sports F1 UK', id:'60'},
+  {name:'Sky Sports F1 DE', id:'274'},
+  {name:'Sky Sport F1 IT',  id:'577'},
+  {name:'Sky Sports Main',  id:'38'},
+  {name:'Sky Sports+',      id:'36'},
+];
 
-  async function submitKey(){
-    const val = document.getElementById('keyInput').value.trim();
-    if(!val){ showErr('Please paste your API key.'); return; }
-    setBtnLoading(true); clearErr();
-    try{
-      const r = await fetch(`${TMDB}/configuration?api_key=${val}`);
-      if(r.status===401){ showErr('Invalid key — use the v3 API Key.'); setBtnLoading(false); return; }
-      if(!r.ok){ showErr(`TMDB error (${r.status}).`); setBtnLoading(false); return; }
-      KEY = val; localStorage.setItem('vs_key', val); launchApp();
-    } catch(e){ showErr('Could not reach TMDB. Check your connection.'); setBtnLoading(false); }
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let KEY          = '';
+let mediaType    = 'movie';
+let activeItem   = null;
+let seasons      = [];
+let currentSport = 'football';
+let allMatches   = [];
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+function h(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function spin(){ return '<span class="spin"></span>'; }
+
+async function tmdb(path){
+  const sep = path.includes('?') ? '&' : '?';
+  const r   = await fetch(TMDB + path + sep + 'api_key=' + KEY);
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+/* ══════════════════════════════════════════
+   SETUP
+══════════════════════════════════════════ */
+document.getElementById('sampleKeyBtn').addEventListener('click', function(){
+  document.getElementById('keyInput').value = '02e182cf0f2f661b979789ec44ce9604';
+});
+
+document.getElementById('keyInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') submitKey();
+});
+
+document.getElementById('keyBtn').addEventListener('click', submitKey);
+
+async function submitKey(){
+  var val = document.getElementById('keyInput').value.trim();
+  if(!val){ showErr('Please paste your API key.'); return; }
+  setKeyLoading(true); clearErr();
+  try{
+    var r = await fetch(TMDB + '/configuration?api_key=' + val);
+    if(r.status === 401){ showErr('Invalid key — use the v3 API Key.'); setKeyLoading(false); return; }
+    if(!r.ok){ showErr('TMDB error ' + r.status + '.'); setKeyLoading(false); return; }
+    KEY = val;
+    localStorage.setItem('fmas_key', val);
+    launchApp();
+  } catch(e){
+    showErr('Could not reach TMDB. Check your connection.');
+    setKeyLoading(false);
   }
+}
 
-  function showErr(m){ const e=document.getElementById('keyErr'); e.textContent=m; e.style.display='block'; }
-  function clearErr(){ const e=document.getElementById('keyErr'); e.textContent=''; e.style.display='none'; }
-  function setBtnLoading(on){
-    document.getElementById('keyBtn').disabled=on;
-    document.getElementById('keyBtnText').innerHTML=on?'<span class="spin"></span>&nbsp;Checking…':'Enter FMAS →';
-  }
-  function launchApp(){
-    document.getElementById('setup').style.display='none';
-    document.getElementById('app').style.display='block';
-    loadTrending();
-  }
-  function resetKey(){
-    localStorage.removeItem('vs_key'); KEY='';
-    document.getElementById('keyInput').value=''; clearErr(); setBtnLoading(false);
-    document.getElementById('setup').style.display='flex';
-    document.getElementById('app').style.display='none';
-  }
-  (function init(){ const s=localStorage.getItem('vs_key'); if(s){ KEY=s; launchApp(); } })();
+function showErr(m){ var e=document.getElementById('keyErr'); e.textContent=m; e.style.display='block'; }
+function clearErr(){ var e=document.getElementById('keyErr'); e.textContent=''; e.style.display='none'; }
+function setKeyLoading(on){
+  document.getElementById('keyBtn').disabled = on;
+  document.getElementById('keyBtnTxt').innerHTML = on ? spin() + ' Checking…' : 'Enter FMAS →';
+}
 
-  /* ═══ SECTION SWITCHING ═══ */
-  function showSection(sec){
-    currentSection = sec;
-    ['movies','tv','sports'].forEach(s=>{
-      const id = s==='tv' ? 'navTv' : 'nav'+s.charAt(0).toUpperCase()+s.slice(1);
-      document.getElementById(id)?.classList.toggle('active', s===sec);
+function launchApp(){
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display   = 'block';
+  bindNav();
+  buildSportTabs();
+  loadTrending();
+}
+
+function resetKey(){
+  localStorage.removeItem('fmas_key');
+  KEY = '';
+  document.getElementById('keyInput').value = '';
+  clearErr(); setKeyLoading(false);
+  document.getElementById('setup').style.display = 'flex';
+  document.getElementById('app').style.display   = 'none';
+}
+
+(function init(){
+  var saved = localStorage.getItem('fmas_key');
+  if(saved){ KEY = saved; launchApp(); }
+})();
+
+/* ══════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════ */
+function bindNav(){
+  document.getElementById('nb-movies').addEventListener('click', function(){ showSection('movies'); });
+  document.getElementById('nb-tv').addEventListener('click',     function(){ showSection('tv'); });
+  document.getElementById('nb-sports').addEventListener('click', function(){ showSection('sports'); });
+  document.getElementById('nb-key').addEventListener('click',    resetKey);
+}
+
+function showSection(sec){
+  var isMovies = sec !== 'sports';
+  document.getElementById('moviesView').style.display = isMovies ? 'block' : 'none';
+  document.getElementById('sportsView').style.display = isMovies ? 'none'  : 'block';
+  ['movies','tv','sports'].forEach(function(s){
+    var id = s === 'movies' ? 'nb-movies' : s === 'tv' ? 'nb-tv' : 'nb-sports';
+    document.getElementById(id).classList.toggle('active', s === sec);
+  });
+  if(sec === 'sports') loadSports();
+  if(sec === 'tv'){ mediaType = 'tv'; switchTab('tv'); }
+  if(sec === 'movies'){ mediaType = 'movie'; switchTab('movie'); }
+}
+
+/* ══════════════════════════════════════════
+   MOVIES / TV
+══════════════════════════════════════════ */
+document.getElementById('searchBtn').addEventListener('click', doSearch);
+document.getElementById('searchInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') doSearch();
+});
+document.getElementById('tabMovie').addEventListener('click', function(){ switchTab('movie'); });
+document.getElementById('tabTv').addEventListener('click',    function(){ switchTab('tv'); });
+
+// Quick search tags
+document.querySelectorAll('.tag').forEach(function(tag){
+  tag.addEventListener('click', function(){
+    document.getElementById('searchInput').value = tag.dataset.q;
+    doSearch();
+  });
+});
+
+function switchTab(type){
+  mediaType = type;
+  document.getElementById('tabMovie').classList.toggle('active', type === 'movie');
+  document.getElementById('tabTv').classList.toggle('active',    type === 'tv');
+  document.getElementById('searchInput').value = '';
+  loadTrending();
+}
+
+function showSkeletons(){
+  document.getElementById('emptyMovies').style.display = 'none';
+  document.getElementById('countLabel').textContent    = '';
+  var html = '';
+  for(var i=0;i<12;i++) html += '<div class="skel"><div class="skel-body"></div></div>';
+  document.getElementById('grid').innerHTML = html;
+}
+
+function renderGrid(items, total){
+  var grid = document.getElementById('grid');
+  document.getElementById('emptyMovies').style.display = 'none';
+  if(!items || !items.length){
+    grid.innerHTML = '';
+    document.getElementById('emptyMovies').style.display = 'block';
+    return;
+  }
+  if(total) document.getElementById('countLabel').textContent = Number(total).toLocaleString() + ' results';
+  // Store for onclick reference
+  window._movies = items;
+  var html = '';
+  for(var i=0; i<items.length; i++){
+    var m     = items[i];
+    var title = h(m.title || m.name || 'Untitled');
+    var year  = (m.release_date || m.first_air_date || '').slice(0,4);
+    var stars = m.vote_average ? m.vote_average.toFixed(1) : '';
+    var img   = m.poster_path
+      ? '<img src="' + IMG_SM + m.poster_path + '" alt="' + title + '" loading="lazy"/>'
+      : '<div class="card-no-img">🎬</div>';
+    html += '<div class="card" data-idx="' + i + '">'
+      + img
+      + '<div class="card-over"><div class="play"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div></div>'
+      + '<div class="card-info">'
+      + '<div class="card-title">' + title + '</div>'
+      + '<div class="card-meta"><span>' + (year||'—') + '</span>' + (stars ? '<span class="card-stars">★ ' + stars + '</span>' : '') + '</div>'
+      + '</div></div>';
+  }
+  grid.innerHTML = html;
+  // Bind clicks on cards
+  grid.querySelectorAll('.card').forEach(function(card){
+    card.addEventListener('click', function(){
+      openModal(window._movies[parseInt(this.dataset.idx)].id);
     });
-    document.getElementById('moviesView').style.display = sec==='sports' ? 'none' : 'block';
-    document.getElementById('sportsView').style.display = sec==='sports' ? 'block' : 'none';
-    if(sec==='sports') loadSports();
+  });
+}
+
+function setSearchLoading(on){
+  var b = document.getElementById('searchBtn');
+  b.disabled = on;
+  b.innerHTML = on ? spin() : 'Search';
+}
+
+async function loadTrending(){
+  showSkeletons();
+  document.getElementById('sectionLabel').textContent = 'Trending Now';
+  try{
+    var d = await tmdb('/trending/' + mediaType + '/week?language=en-US');
+    renderGrid(d.results, d.total_results);
+  } catch(e){
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('emptyMovies').style.display = 'block';
   }
+}
 
-  /* ═══ MOVIES / TV ═══ */
-  async function api(path){
-    const sep=path.includes('?')?'&':'?';
-    const r=await fetch(`${TMDB}${path}${sep}api_key=${KEY}`);
-    if(!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json();
+async function doSearch(){
+  var q = document.getElementById('searchInput').value.trim();
+  if(!q){ loadTrending(); return; }
+  showSkeletons(); setSearchLoading(true);
+  document.getElementById('sectionLabel').textContent = 'Results for "' + q + '"';
+  try{
+    var d = await tmdb('/search/' + mediaType + '?query=' + encodeURIComponent(q) + '&include_adult=false&language=en-US');
+    renderGrid(d.results, d.total_results);
+  } catch(e){
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('emptyMovies').style.display = 'block';
   }
+  setSearchLoading(false);
+}
 
-  function skeletons(){
-    document.getElementById('empty').style.display='none';
-    document.getElementById('countLabel').textContent='';
-    document.getElementById('grid').innerHTML=Array(12).fill(0).map(()=>`<div class="skel"><div class="skel-body"></div></div>`).join('');
-  }
+/* ══════════════════════════════════════════
+   MOVIE MODAL
+══════════════════════════════════════════ */
+document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+document.getElementById('modal').addEventListener('click', function(e){
+  if(e.target === this) closeModal();
+});
 
-  function renderGrid(items,total){
-    const g=document.getElementById('grid');
-    document.getElementById('empty').style.display='none';
-    if(!items?.length){ g.innerHTML=''; document.getElementById('empty').style.display='block'; return; }
-    if(total) document.getElementById('countLabel').textContent=`${Number(total).toLocaleString()} results`;
-    g.innerHTML=items.map(item=>{
-      const title=esc(item.title||item.name||'Untitled');
-      const year=(item.release_date||item.first_air_date||'').slice(0,4);
-      const rating=item.vote_average?item.vote_average.toFixed(1):null;
-      const thumb=item.poster_path?`<img src="${IMG_SM}${item.poster_path}" alt="${title}" loading="lazy"/>`:`<div class="card-no-img">🎬</div>`;
-      return `<div class="card" onclick="openModal(${item.id})">
-        ${thumb}
-        <div class="card-over"><div class="play"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div></div>
-        <div class="card-info">
-          <div class="card-title">${title}</div>
-          <div class="card-meta"><span>${year||'—'}</span>${rating?`<span class="card-stars">★ ${rating}</span>`:''}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  function setSearchLoading(on){
-    const b=document.getElementById('searchBtn'); b.disabled=on;
-    b.innerHTML=on?'<span class="spin"></span>':'Search';
-  }
-
-  async function loadTrending(){
-    skeletons(); document.getElementById('sectionLabel').textContent='Trending Now';
-    try{ const d=await api(`/trending/${mediaType}/week?language=en-US`); renderGrid(d.results,d.total_results); }
-    catch(e){ document.getElementById('empty').style.display='block'; document.getElementById('grid').innerHTML=''; }
-  }
-
-  async function doSearch(){
-    const q=document.getElementById('searchInput').value.trim();
-    if(!q){ loadTrending(); return; }
-    skeletons(); setSearchLoading(true);
-    document.getElementById('sectionLabel').textContent=`Results for "${q}"`;
-    try{ const d=await api(`/search/${mediaType}?query=${encodeURIComponent(q)}&include_adult=false&language=en-US`); renderGrid(d.results,d.total_results); }
-    catch(e){ document.getElementById('empty').style.display='block'; document.getElementById('grid').innerHTML=''; }
-    finally{ setSearchLoading(false); }
-  }
-
-  function quickSearch(q){ document.getElementById('searchInput').value=q; doSearch(); }
-
-  function switchMediaTab(type){
-    mediaType=type;
-    document.getElementById('tabMovie').classList.toggle('active',type==='movie');
-    document.getElementById('tabTv2').classList.toggle('active',type==='tv');
-    document.getElementById('searchInput').value='';
-    loadTrending();
-  }
-
-  /* ═══ MOVIE MODAL ═══ */
-  async function openModal(id){
-    document.getElementById('modal').classList.add('open');
-    document.body.style.overflow='hidden';
-    document.getElementById('frame').src='';
-    document.getElementById('tvBar').style.display='none';
-    document.getElementById('mTitle').textContent='Loading…';
-    document.getElementById('mName').textContent='';
-    document.getElementById('mOverview').textContent='';
-    document.getElementById('mTags').innerHTML='';
-    const mp=document.getElementById('mPoster'); mp.src=''; mp.style.display='none';
-    try{
-      const item=await api(`/${mediaType}/${id}?append_to_response=genres&language=en-US`);
-      activeItem=item;
-      const title=item.title||item.name||'Untitled';
-      document.getElementById('mTitle').textContent=title;
-      document.getElementById('mName').textContent=title;
-      document.getElementById('mOverview').textContent=item.overview||'No description available.';
-      if(item.poster_path){ mp.src=IMG_LG+item.poster_path; mp.style.display='block'; }
-      const tags=[...(item.genres||[]).map(g=>g.name)];
-      const year=(item.release_date||item.first_air_date||'').slice(0,4);
-      if(year) tags.unshift(year);
-      if(item.vote_average) tags.unshift(`★ ${item.vote_average.toFixed(1)}`);
-      document.getElementById('mTags').innerHTML=tags.map(t=>`<span class="m-tag">${esc(t)}</span>`).join('');
-      if(mediaType==='movie'){
-        document.getElementById('frame').src=`https://www.vidking.net/embed/movie/${id}?${VIDKING_PARAMS}`;
-      } else {
-        seasons=(item.seasons||[]).filter(s=>s.season_number>0);
-        buildSeasons(); document.getElementById('tvBar').style.display='flex';
-      }
-    } catch(e){ document.getElementById('mTitle').textContent='Error loading — try again'; }
-  }
-
-  function buildSeasons(){
-    document.getElementById('sSel').innerHTML=seasons.map(s=>`<option value="${s.season_number}">Season ${s.season_number}</option>`).join('');
-    updateEps();
-  }
-  function updateEps(){
-    const sn=parseInt(document.getElementById('sSel').value);
-    const s=seasons.find(x=>x.season_number===sn);
-    document.getElementById('eSel').innerHTML=Array.from({length:s?.episode_count||20},(_,i)=>`<option value="${i+1}">Episode ${i+1}</option>`).join('');
-    loadEp();
-  }
-  function loadEp(){
-    if(!activeItem) return;
-    const s=document.getElementById('sSel').value, e=document.getElementById('eSel').value;
-    document.getElementById('frame').src=`https://www.vidking.net/embed/tv/${activeItem.id}/${s}/${e}?${VIDKING_PARAMS}`;
-  }
-  function closeModal(){
-    document.getElementById('modal').classList.remove('open');
-    document.body.style.overflow='';
-    document.getElementById('frame').src='';
-    activeItem=null;
-  }
-
-  /* ═══ SPORTS ═══ */
-  // https://sportsrc.org — free CORS-enabled API, no key needed
-  const SPORTSRC = 'https://api.sportsrc.org';
-
-  // Map our tab names to SportSRC category names
-  const SPORT_CATS = {
-    football:   'football',
-    basketball: 'basketball',
-    mma:        'mma',
-    baseball:   'baseball',
-    hockey:     'hockey',
-    tennis:     'tennis',
-    rugby:      'rugby',
-    f1:         'f1'
-  };
-
-  let currentSport   = 'football';
-  let allMatches     = [];
-
-  function selectSport(sport, el){
-    currentSport = sport;
-    document.querySelectorAll('.sport-tab').forEach(b=>b.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('sportsSearch').value = '';
-    loadSports();
-  }
-
-  async function loadSports(){
-    closeInlinePlayer();
-    document.getElementById('sportsEmpty').style.display = 'none';
-    document.getElementById('matchCount').textContent = '';
-    // Show skeletons
-    document.getElementById('eventsGrid').innerHTML =
-      Array(6).fill(0).map(()=>`<div class="skel-event"></div>`).join('');
-
-    const cat = SPORT_CATS[currentSport] || currentSport;
-    try{
-      const res  = await fetch(`${SPORTSRC}/?data=matches&category=${cat}`);
-      const data = await res.json();
-      allMatches = Array.isArray(data) ? data : (data.matches || data.events || []);
-      renderMatches(allMatches);
-    } catch(e){
-      console.error('SportSRC fetch failed:', e);
-      document.getElementById('eventsGrid').innerHTML = '';
-      document.getElementById('sportsEmpty').style.display = 'block';
+async function openModal(id){
+  var modal = document.getElementById('modal');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('movieFrame').src = '';
+  document.getElementById('tvBar').style.display   = 'none';
+  document.getElementById('mTitle').textContent    = 'Loading…';
+  document.getElementById('mName').textContent     = '';
+  document.getElementById('mOverview').textContent = '';
+  document.getElementById('mTags').innerHTML       = '';
+  var mp = document.getElementById('mPoster');
+  mp.src = ''; mp.style.display = 'none';
+  try{
+    var item = await tmdb('/' + mediaType + '/' + id + '?append_to_response=genres&language=en-US');
+    activeItem = item;
+    var title = item.title || item.name || 'Untitled';
+    document.getElementById('mTitle').textContent    = title;
+    document.getElementById('mName').textContent     = title;
+    document.getElementById('mOverview').textContent = item.overview || 'No description available.';
+    if(item.poster_path){ mp.src = IMG_LG + item.poster_path; mp.style.display = 'block'; }
+    var tags = (item.genres||[]).map(function(g){ return g.name; });
+    var year = (item.release_date||item.first_air_date||'').slice(0,4);
+    if(year) tags.unshift(year);
+    if(item.vote_average) tags.unshift('★ ' + item.vote_average.toFixed(1));
+    document.getElementById('mTags').innerHTML = tags.map(function(t){ return '<span class="m-tag">' + h(t) + '</span>'; }).join('');
+    if(mediaType === 'movie'){
+      document.getElementById('movieFrame').src = VIDKING + '/movie/' + id + '?' + VK_PARAMS;
+    } else {
+      seasons = (item.seasons||[]).filter(function(s){ return s.season_number > 0; });
+      buildSeasons();
+      document.getElementById('tvBar').style.display = 'flex';
     }
+  } catch(e){ document.getElementById('mTitle').textContent = 'Error loading — try again'; }
+}
+
+function buildSeasons(){
+  var sel = document.getElementById('sSel');
+  sel.innerHTML = seasons.map(function(s){
+    return '<option value="' + s.season_number + '">Season ' + s.season_number + '</option>';
+  }).join('');
+  updateEps();
+  document.getElementById('sSel').addEventListener('change', updateEps);
+}
+
+function updateEps(){
+  var sn = parseInt(document.getElementById('sSel').value);
+  var s  = seasons.find(function(x){ return x.season_number === sn; });
+  var ct = s ? s.episode_count : 20;
+  var html = '';
+  for(var i=1; i<=ct; i++) html += '<option value="' + i + '">Episode ' + i + '</option>';
+  document.getElementById('eSel').innerHTML = html;
+  loadEp();
+  document.getElementById('eSel').addEventListener('change', loadEp);
+}
+
+function loadEp(){
+  if(!activeItem) return;
+  var s = document.getElementById('sSel').value;
+  var e = document.getElementById('eSel').value;
+  document.getElementById('movieFrame').src = VIDKING + '/tv/' + activeItem.id + '/' + s + '/' + e + '?' + VK_PARAMS;
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('movieFrame').src = '';
+  activeItem = null;
+}
+
+/* ══════════════════════════════════════════
+   SPORTS
+══════════════════════════════════════════ */
+function buildSportTabs(){
+  var container = document.getElementById('sportTabs');
+  var html = '';
+  SPORTS.forEach(function(sp, i){
+    html += '<button class="sport-tab' + (i===0?' active':'') + '" data-sport="' + sp.id + '">'
+      + (sp.id === 'football' ? '<span class="live-dot"></span>' : '')
+      + sp.label + '</button>';
+  });
+  container.innerHTML = html;
+  container.querySelectorAll('.sport-tab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      container.querySelectorAll('.sport-tab').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentSport = btn.dataset.sport;
+      document.getElementById('sportsSearch').value = '';
+      closeInlinePlayer();
+      loadSports();
+    });
+  });
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadSports);
+document.getElementById('sportsSearch').addEventListener('input', function(){
+  filterMatches(this.value);
+});
+document.getElementById('closePlayerBtn').addEventListener('click', closeInlinePlayer);
+
+async function loadSports(){
+  closeInlinePlayer();
+  document.getElementById('emptySports').style.display = 'none';
+  document.getElementById('matchCount').textContent    = '';
+  var html = '';
+  for(var i=0;i<6;i++) html += '<div class="skel-event"></div>';
+  document.getElementById('eventsGrid').innerHTML = html;
+
+  if(currentSport === 'f1'){ loadF1(); return; }
+
+  try{
+    var res  = await fetch(SPORTSRC + '/?data=matches&category=' + currentSport);
+    var data = await res.json();
+    allMatches = Array.isArray(data) ? data : (data.matches || data.events || []);
+    renderMatches(allMatches);
+  } catch(e){
+    console.error('SportSRC:', e);
+    document.getElementById('eventsGrid').innerHTML = '';
+    document.getElementById('emptySports').style.display = 'block';
   }
+}
 
-  function filterMatches(q){
-    const filtered = q.trim()
-      ? allMatches.filter(m =>
-          (m.event||m.title||m.name||'').toLowerCase().includes(q.toLowerCase()) ||
-          (m.league||m.category||'').toLowerCase().includes(q.toLowerCase()) ||
-          (m.home||'').toLowerCase().includes(q.toLowerCase()) ||
-          (m.away||'').toLowerCase().includes(q.toLowerCase())
-        )
-      : allMatches;
-    renderMatches(filtered);
+function filterMatches(q){
+  var low = q.trim().toLowerCase();
+  var filtered = low ? allMatches.filter(function(m){
+    return (m.event||m.title||m.name||'').toLowerCase().includes(low)
+        || (m.league||m.category||'').toLowerCase().includes(low)
+        || (m.home||'').toLowerCase().includes(low)
+        || (m.away||'').toLowerCase().includes(low);
+  }) : allMatches;
+  renderMatches(filtered);
+}
+
+function fmtTime(t){
+  if(!t) return 'TBD';
+  try{
+    var d = isNaN(t) ? new Date(t) : new Date(Number(t)*1000);
+    if(isNaN(d.getTime())) return String(t);
+    return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
+      + ' · ' + d.toLocaleDateString('en-GB',{weekday:'short',month:'short',day:'numeric'});
+  } catch(e){ return String(t); }
+}
+
+var SPORT_ICON = {football:'⚽',basketball:'🏀',mma:'🥊',f1:'🏎️',baseball:'⚾',hockey:'🏒',tennis:'🎾',rugby:'🏉'};
+
+function renderMatches(matches){
+  var grid  = document.getElementById('eventsGrid');
+  var count = document.getElementById('matchCount');
+  document.getElementById('emptySports').style.display = 'none';
+
+  if(!matches.length){
+    grid.innerHTML = '';
+    document.getElementById('emptySports').style.display = 'block';
+    count.textContent = '0 matches';
+    return;
   }
+  count.textContent = matches.length + ' match' + (matches.length>1?'es':'');
 
-  function renderMatches(matches){
-    const grid    = document.getElementById('eventsGrid');
-    const countEl = document.getElementById('matchCount');
-    document.getElementById('sportsEmpty').style.display = 'none';
+  // Store for click reference
+  window._matches = matches;
 
-    if(!matches.length){
-      grid.innerHTML = '';
-      document.getElementById('sportsEmpty').style.display = 'block';
-      countEl.textContent = '0 matches';
-      return;
+  var icon = SPORT_ICON[currentSport] || '🎮';
+  var now  = new Date();
+  var html = '';
+
+  for(var i=0; i<matches.length; i++){
+    var m      = matches[i];
+    var title  = m.event || m.title || (m.home && m.away ? m.home + ' vs ' + m.away : 'Match');
+    var league = m.league || m.category || m.competition || '';
+    var tstr   = m.time || m.date || m.starts || '';
+    var poster = m.poster || m.image || m.thumbnail || '';
+
+    var isLive = false, isSoon = false;
+    if(m.status === 'live' || m.live) isLive = true;
+    else if(tstr){
+      try{
+        var td   = isNaN(tstr) ? new Date(tstr) : new Date(Number(tstr)*1000);
+        var diff = td - now;
+        isLive   = diff < 0 && diff > -7200000;
+        isSoon   = diff > 0 && diff < 3600000;
+      } catch(ex){}
     }
-    countEl.textContent = `${matches.length} match${matches.length>1?'es':''}`;
 
-    // Store in global so onclick can safely reference by index (avoids HTML quote breakage)
-    window._renderedMatches = matches;
+    var badge = isLive ? '<span class="live-badge">● LIVE</span>'
+              : isSoon ? '<span class="soon-badge">SOON</span>' : '';
 
-    const sportEmoji = {football:'⚽',basketball:'🏀',mma:'🥊',f1:'🏎️',baseball:'⚾',hockey:'🏒',tennis:'🎾',rugby:'🏉'};
-    const icon = sportEmoji[currentSport] || '🎮';
-    const now  = new Date();
+    var posterHtml = poster
+      ? '<img src="' + h(poster) + '" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-radius:10px 10px 0 0" loading="lazy" onerror="this.style.display=\'none\'">'
+      : '';
 
-    grid.innerHTML = matches.map((m, idx) => {
-      const title   = m.event || m.title || (m.home && m.away ? `${m.home} vs ${m.away}` : 'Match');
-      const league  = m.league || m.category || m.competition || '';
-      const timeStr = m.time || m.date || m.starts || '';
-      const poster  = m.poster || m.image || m.thumbnail || '';
+    var teamsHtml = (m.home && m.away)
+      ? '<div class="ev-teams"><span>' + h(m.home) + '</span><span class="ev-vs">VS</span><span>' + h(m.away) + '</span></div>'
+      : '';
 
-      let isLive = false, isSoon = false;
-      if(m.status === 'live' || m.live) isLive = true;
-      else if(timeStr){
-        try{
-          const t = isNaN(timeStr) ? new Date(timeStr) : new Date(Number(timeStr)*1000);
-          const diff = t - now;
-          isLive = diff < 0 && diff > -7200000;
-          isSoon = diff > 0 && diff < 3600000;
-        } catch{}
-      }
-
-      const badge = isLive
-        ? `<span class="event-live-badge">&#9679; LIVE</span>`
-        : isSoon ? `<span class="event-soon-badge">SOON</span>` : '';
-
-      const posterHtml = poster
-        ? `<img src="${esc(poster)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-radius:10px 10px 0 0;background:var(--g2)" loading="lazy" onerror="this.style.display='none'">`
-        : '';
-
-      return `<div class="event-card${isLive?' live-card':''}" onclick="openMatch(window._renderedMatches[${idx}])" style="cursor:pointer">
-        ${posterHtml}
-        <div style="padding:14px 16px">
-          <div class="event-header" style="margin-bottom:8px">
-            <span class="event-time">${icon} ${timeStr ? formatMatchTime(timeStr) : 'TBD'}</span>
-            ${badge}
-          </div>
-          ${league ? `<div style="font-size:.72rem;color:var(--g5);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">${esc(league)}</div>` : ''}
-          <div class="event-name">${esc(title)}</div>
-          ${m.home && m.away ? `<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px;padding:8px;background:rgba(0,180,60,.06);border-radius:8px"><span style="font-size:.85rem;font-weight:600;text-align:right;flex:1">${esc(m.home)}</span><span style="font-size:.72rem;color:var(--muted);font-weight:700">VS</span><span style="font-size:.85rem;font-weight:600;text-align:left;flex:1">${esc(m.away)}</span></div>` : ''}
-        </div>
-      </div>`;
-    }).join('');
+    html += '<div class="event-card' + (isLive?' live-card':'') + '" data-midx="' + i + '">'
+      + posterHtml
+      + '<div style="padding:14px 16px">'
+      + '<div class="ev-time"><span>' + icon + ' ' + fmtTime(tstr) + '</span>' + badge + '</div>'
+      + (league ? '<div class="ev-league">' + h(league) + '</div>' : '')
+      + '<div class="ev-name">' + h(title) + '</div>'
+      + teamsHtml
+      + '</div></div>';
   }
 
-  function formatMatchTime(t){
-    if(!t) return 'TBD';
+  grid.innerHTML = html;
+
+  // Bind clicks safely via event delegation
+  grid.querySelectorAll('.event-card').forEach(function(card){
+    card.addEventListener('click', function(){
+      openMatch(window._matches[parseInt(this.dataset.midx)]);
+    });
+  });
+}
+
+async function openMatch(m){
+  var panel   = document.getElementById('inlinePlayer');
+  var frame   = document.getElementById('sportsFrame');
+  var titleEl = document.getElementById('playerTitle');
+  var metaEl  = document.getElementById('playerMeta');
+  var srcEl   = document.getElementById('sourceBtns');
+
+  var title = m.event || m.title || (m.home && m.away ? m.home + ' vs ' + m.away : 'Match');
+  titleEl.textContent = '▶ ' + title;
+  metaEl.textContent  = m.league || m.category || '';
+  srcEl.innerHTML     = spin() + ' Loading streams…';
+  frame.src = '';
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+
+  var sources = m.sources || m.streams || [];
+
+  // Try to fetch detailed streams if we have an ID
+  if(m.id){
     try{
-      // Unix timestamp?
-      const d = isNaN(t) ? new Date(t) : new Date(Number(t)*1000);
-      if(isNaN(d)) return String(t);
-      return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) +
-        ' · ' + d.toLocaleDateString('en-GB',{weekday:'short',month:'short',day:'numeric'});
-    } catch{ return String(t); }
+      var res = await fetch(SPORTSRC + '/?data=detail&category=' + currentSport + '&id=' + encodeURIComponent(m.id));
+      var det = await res.json();
+      if(det.sources && det.sources.length) sources = det.sources;
+      else if(det.streams && det.streams.length) sources = det.streams;
+      else if(typeof det.embed === 'string') sources = [{url: det.embed, name: 'Stream 1'}];
+    } catch(ex){ console.warn('Detail fetch failed:', ex); }
   }
 
-  async function openMatch(matchObj){
-    // Fetch full match details + stream sources from SportSRC
-    const panel = document.getElementById('inlinePlayer');
-    const frame = document.getElementById('sportsPlayerFrame');
-    const title = document.getElementById('playerMatchTitle');
-    const meta  = document.getElementById('playerMatchMeta');
-    const srcBtns = document.getElementById('playerSourceBtns');
+  if(!sources.length && m.embed) sources = [{url: m.embed, name: 'Stream 1'}];
 
-    const matchTitle = matchObj.event || matchObj.title || (matchObj.home && matchObj.away ? `${matchObj.home} vs ${matchObj.away}` : 'Match');
-    title.textContent  = matchTitle;
-    meta.textContent   = matchObj.league || matchObj.category || '';
-    srcBtns.innerHTML  = '<span style="font-size:.78rem;color:var(--muted)">Loading streams…</span>';
-    frame.src = '';
-    panel.style.display = 'block';
-    panel.scrollIntoView({behavior:'smooth', block:'start'});
+  if(!sources.length){
+    srcEl.innerHTML = '<span style="font-size:.78rem;color:#ff7070">No streams available yet</span>';
+    return;
+  }
 
-    try{
-      const cat = SPORT_CATS[currentSport] || currentSport;
-      const id  = matchObj.id || matchObj.match_id;
-      let sources = matchObj.sources || matchObj.streams || [];
+  // Load first source
+  var firstUrl = sources[0].url || sources[0].iframe || sources[0].embed || sources[0];
+  frame.src = String(firstUrl);
 
-      // Fetch detail if we have an ID
-      if(id){
-        const res  = await fetch(`${SPORTSRC}/?data=detail&category=${cat}&id=${encodeURIComponent(id)}`);
-        const det  = await res.json();
-        sources = det.sources || det.streams || det.embed || sources;
-        if(det.embed && typeof det.embed === 'string') sources = [{url: det.embed, name:'Stream 1'}];
-      }
+  // Build source buttons
+  var btnHtml = '';
+  for(var i=0; i<sources.length; i++){
+    var s    = sources[i];
+    var url  = String(s.url || s.iframe || s.embed || s);
+    var name = s.name || s.label || s.source || ('Source ' + (i+1));
+    btnHtml += '<button class="src-btn' + (i===0?' active':'') + '" data-url="' + h(url) + '">' + h(String(name)) + '</button>';
+  }
+  srcEl.innerHTML = btnHtml;
 
-      if(!sources.length && matchObj.embed) sources = [{url: matchObj.embed, name:'Stream 1'}];
+  // Bind source buttons
+  srcEl.querySelectorAll('.src-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      srcEl.querySelectorAll('.src-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('sportsFrame').src = btn.dataset.url;
+    });
+  });
+}
 
-      if(!sources.length){
-        srcBtns.innerHTML = '<span style="font-size:.78rem;color:#ff7070">No streams available yet</span>';
-        return;
-      }
+function closeInlinePlayer(){
+  var p = document.getElementById('inlinePlayer');
+  p.style.display = 'none';
+  document.getElementById('sportsFrame').src = '';
+}
 
-      // Load first source
-      const first = sources[0];
-      const firstUrl = first.url || first.iframe || first.embed || first;
-      frame.src = firstUrl;
+/* ══════════════════════════════════════════
+   F1
+══════════════════════════════════════════ */
+async function loadF1(){
+  var grid = document.getElementById('eventsGrid');
+  try{
+    var res  = await fetch('https://api.openf1.org/v1/sessions?year=2025&order_by=-date_start&limit=6');
+    var sess = await res.json();
+    window._matches = [];
+    var now  = new Date();
 
-      // Build source buttons
-      srcBtns.innerHTML = sources.map((s, i) => {
-        const url  = s.url || s.iframe || s.embed || s;
-        const name = s.name || s.label || s.source || `Source ${i+1}`;
-        return `<button
-          onclick="document.getElementById('sportsPlayerFrame').src='${url.replace(/'/g,"\'")}';document.querySelectorAll('#playerSourceBtns button').forEach(b=>b.style.background='rgba(0,180,60,.08)');this.style.background='rgba(0,180,60,.3)'"
-          style="background:${i===0?'rgba(0,180,60,.3)':'rgba(0,180,60,.08)'};border:1px solid rgba(0,180,60,.2);border-radius:7px;color:var(--g6);padding:5px 11px;font-size:.76rem;cursor:pointer;font-family:'DM Sans',sans-serif">
-          ${esc(String(name))}
-        </button>`;
-      }).join('');
+    // Pinned 24/7 card
+    var html = '<div class="event-card f1-card" data-midx="f1live" style="border-color:rgba(220,0,0,.4);background:rgba(60,0,0,.18)">'
+      + '<div style="padding:14px 16px">'
+      + '<div class="ev-time"><span>📡 24/7 Live Channel</span><span class="live-badge">● ON AIR</span></div>'
+      + '<div class="ev-name">🏎️ Watch F1 Channels Now</div>'
+      + '<p style="color:var(--muted);font-size:.8rem;margin-top:6px">Sky Sports F1 UK · DE · Italy</p>'
+      + '<div class="ev-channels"><span class="ch-badge">Sky Sports F1 UK</span><span class="ch-badge">Sky Sports F1 DE</span><span class="ch-badge">Sky Sport F1 IT</span></div>'
+      + '</div></div>';
 
-    } catch(e){
-      console.error('Stream fetch failed:', e);
-      srcBtns.innerHTML = '<span style="font-size:.78rem;color:#ff7070">Could not load streams</span>';
+    if(Array.isArray(sess)){
+      sess.forEach(function(s, i){
+        var start = new Date(s.date_start);
+        var end   = s.date_end ? new Date(s.date_end) : new Date(start.getTime()+7200000);
+        var live  = now >= start && now <= end;
+        var past  = now > end;
+        var soon  = !live && !past && (start-now) < 86400000;
+        var badge = live ? '<span class="live-badge">● LIVE</span>'
+                  : soon ? '<span class="soon-badge">SOON</span>'
+                  : past ? '<span style="font-size:.7rem;color:var(--muted)">FINISHED</span>' : '';
+        var ds = start.toLocaleDateString('en-GB',{weekday:'short',month:'short',day:'numeric'});
+        var ts = start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        var name = (s.session_name||'Session') + ' — ' + (s.location||s.country_name||'');
+        html += '<div class="event-card f1-card" data-midx="f1-' + i + '">'
+          + '<div style="padding:14px 16px">'
+          + '<div class="ev-time"><span>📅 ' + ds + ' ' + ts + '</span>' + badge + '</div>'
+          + '<div class="ev-name">🏎️ ' + h(name) + '</div>'
+          + '<div class="ev-channels"><span class="ch-badge">Sky Sports F1</span><span class="ch-badge">F1 TV</span></div>'
+          + '</div></div>';
+      });
     }
-  }
-
-  function closeInlinePlayer(){
-    const p = document.getElementById('inlinePlayer');
-    if(p) p.style.display = 'none';
-    const f = document.getElementById('sportsPlayerFrame');
-    if(f) f.src = '';
-  }
-
-  /* ── F1 via OpenF1 API (public, no key) ── */
-  async function loadF1(){
-    const grid=document.getElementById('eventsGrid');
-    grid.innerHTML=Array(4).fill(0).map(()=>`<div class="skel-event f1-card"></div>`).join('');
-    document.getElementById('sportsEmpty').style.display='none';
-
-    try{
-      // Get current/latest session
-      const [sessRes, meetRes]=await Promise.all([
-        fetch('https://api.openf1.org/v1/sessions?year=2025&order_by=-date_start&limit=5'),
-        fetch('https://api.openf1.org/v1/meetings?year=2025&order_by=-date_start&limit=3')
-      ]);
-      const sessions=await sessRes.json();
-      const meetings=await meetRes.json();
-      renderF1Events(sessions, meetings);
-    } catch(e){
-      console.warn('F1 fetch failed:', e);
-      grid.innerHTML=`<div class="event-card f1-card" onclick='openF1Stream('F1 Live Channels')' style="grid-column:1/-1;text-align:center;padding:32px">
-        <div class="event-sport-icon">🏎️</div>
-        <div class="event-name">Watch F1 Live Now</div>
-        <p style="color:var(--muted);font-size:.85rem;margin-top:8px">Sky Sports F1 UK · DE · Italy — click to open streams</p>
-      </div>`;
-    }
-  }
-
-  // F1 channel lookup — stored globally so onclick can reference by key safely
-  const F1_CHANNELS = [
-    {name:'Sky Sports F1 UK', id:'60'},
-    {name:'Sky Sports F1 DE', id:'274'},
-    {name:'Sky Sport F1 Italy', id:'577'},
-    {name:'Sky Sports Main Event', id:'38'},
-    {name:'Sky Sports+', id:'36'}
-  ];
-
-  function renderF1Events(sessions, meetings){
-    const grid=document.getElementById('eventsGrid');
-    if(!sessions?.length){ grid.innerHTML=''; document.getElementById('sportsEmpty').style.display='block'; return; }
-
-    const now=new Date();
-
-    // Pinned always-on card
-    let html = `<div class="event-card f1-card" onclick="openF1Stream('F1 Live Channels — Sky Sports')" style="border-color:rgba(220,0,0,.4);background:rgba(80,0,0,.18);cursor:pointer">
-      <div class="event-header"><span class="event-time">&#128225; 24/7 Live Channel</span><span class="event-live-badge">&#9679; ON AIR</span></div>
-      <div class="event-sport-icon">&#127950;</div>
-      <div class="event-name">Watch F1 Channels Now</div>
-      <p style="color:var(--muted);font-size:.82rem;margin:6px 0 10px">Sky Sports F1 UK &middot; DE &middot; Italy</p>
-      <div class="event-channels"><span class="channel-badge">Sky Sports F1 UK</span><span class="channel-badge">Sky Sports F1 DE</span><span class="channel-badge">Sky Sport F1 Italy</span></div>
-    </div>`;
-
-    html += sessions.slice(0,6).map((sess,idx)=>{
-      const start=new Date(sess.date_start);
-      const end2=sess.date_end ? new Date(sess.date_end) : new Date(start.getTime()+7200000);
-      const isLive=now>=start && now<=end2;
-      const isPast=now>end2;
-      const isSoon=!isLive && !isPast && (start-now)<86400000;
-      const badge=isLive?'<span class="event-live-badge">&#9679; LIVE</span>':isSoon?'<span class="event-soon-badge">SOON</span>':isPast?'<span class="m-tag" style="font-size:.7rem">FINISHED</span>':'';
-      const dateStr=start.toLocaleDateString('en-GB',{weekday:'short',month:'short',day:'numeric'});
-      const timeStr=start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      const label=esc((sess.session_name||'Session')+' — '+(sess.location||sess.country_name||''));
-      return `<div class="event-card f1-card" onclick="openF1Stream('${label}')" style="cursor:pointer">
-        <div class="event-header"><span class="event-time">&#128197; ${dateStr} ${timeStr}</span>${badge}</div>
-        <div class="event-sport-icon">&#127950;</div>
-        <div class="event-name">${label}</div>
-        <div class="event-channels"><span class="channel-badge">Sky Sports F1</span><span class="channel-badge">F1 TV</span></div>
-      </div>`;
-    }).join('');
 
     grid.innerHTML = html;
+
+    // Bind F1 card clicks
+    grid.querySelectorAll('.event-card').forEach(function(card){
+      card.addEventListener('click', function(){ openF1Player(card.dataset.midx); });
+    });
+
+  } catch(e){
+    grid.innerHTML = '';
+    document.getElementById('emptySports').style.display = 'block';
   }
+}
 
-  function openF1Stream(title){
-    const panel   = document.getElementById('inlinePlayer');
-    const frame   = document.getElementById('sportsPlayerFrame');
-    const titleEl = document.getElementById('playerMatchTitle');
-    const metaEl  = document.getElementById('playerMatchMeta');
-    const srcBtns = document.getElementById('playerSourceBtns');
-    titleEl.textContent = title;
-    metaEl.textContent  = 'DaddyLive — Sky Sports F1';
-    frame.src = 'https://dlstreams.top/stream/stream-60.php';
-    srcBtns.innerHTML = F1_CHANNELS.map((ch,i)=>
-      `<button onclick="document.getElementById('sportsPlayerFrame').src='https://dlstreams.top/stream/stream-${ch.id}.php';document.querySelectorAll('#playerSourceBtns button').forEach(b=>b.style.background='rgba(0,180,60,.08)');this.style.background='rgba(0,180,60,.3)'"
-        style="background:${i===0?'rgba(0,180,60,.3)':'rgba(0,180,60,.08)'};border:1px solid rgba(0,180,60,.2);border-radius:7px;color:var(--g6);padding:5px 11px;font-size:.76rem;cursor:pointer;font-family:'DM Sans',sans-serif">${ch.name}</button>`
-    ).join('');
-    panel.style.display='block';
-    panel.scrollIntoView({behavior:'smooth',block:'start'});
+function openF1Player(key){
+  var panel   = document.getElementById('inlinePlayer');
+  var frame   = document.getElementById('sportsFrame');
+  var titleEl = document.getElementById('playerTitle');
+  var metaEl  = document.getElementById('playerMeta');
+  var srcEl   = document.getElementById('sourceBtns');
+
+  titleEl.textContent = '▶ F1 Live Stream';
+  metaEl.textContent  = 'DaddyLive — Sky Sports F1';
+  frame.src = DADDY + '/stream/stream-60.php';
+
+  var btnHtml = '';
+  F1_CHANNELS.forEach(function(ch, i){
+    btnHtml += '<button class="src-btn' + (i===0?' active':'') + '" data-url="' + DADDY + '/stream/stream-' + ch.id + '.php">' + h(ch.name) + '</button>';
+  });
+  srcEl.innerHTML = btnHtml;
+
+  srcEl.querySelectorAll('.src-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      srcEl.querySelectorAll('.src-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('sportsFrame').src = btn.dataset.url;
+    });
+  });
+
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* ══════════════════════════════════════════
+   GLOBAL KEY HANDLER
+══════════════════════════════════════════ */
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    closeModal();
+    closeInlinePlayer();
   }
-
-
-
+});
 </script>
 </body>
 </html>
