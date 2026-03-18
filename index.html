@@ -609,8 +609,8 @@
   }
 
   function renderMatches(matches){
-    const grid   = document.getElementById('eventsGrid');
-    const countEl= document.getElementById('matchCount');
+    const grid    = document.getElementById('eventsGrid');
+    const countEl = document.getElementById('matchCount');
     document.getElementById('sportsEmpty').style.display = 'none';
 
     if(!matches.length){
@@ -621,19 +621,19 @@
     }
     countEl.textContent = `${matches.length} match${matches.length>1?'es':''}`;
 
+    // Store in global so onclick can safely reference by index (avoids HTML quote breakage)
+    window._renderedMatches = matches;
+
     const sportEmoji = {football:'⚽',basketball:'🏀',mma:'🥊',f1:'🏎️',baseball:'⚾',hockey:'🏒',tennis:'🎾',rugby:'🏉'};
     const icon = sportEmoji[currentSport] || '🎮';
     const now  = new Date();
 
     grid.innerHTML = matches.map((m, idx) => {
-      // SportSRC fields: event/title, time/date, league, home, away, id, poster, sources[]
       const title   = m.event || m.title || (m.home && m.away ? `${m.home} vs ${m.away}` : 'Match');
       const league  = m.league || m.category || m.competition || '';
       const timeStr = m.time || m.date || m.starts || '';
       const poster  = m.poster || m.image || m.thumbnail || '';
-      const matchId = m.id || m.match_id || idx;
 
-      // Determine live/soon status from time string or unix timestamp
       let isLive = false, isSoon = false;
       if(m.status === 'live' || m.live) isLive = true;
       else if(timeStr){
@@ -646,14 +646,14 @@
       }
 
       const badge = isLive
-        ? `<span class="event-live-badge">● LIVE</span>`
+        ? `<span class="event-live-badge">&#9679; LIVE</span>`
         : isSoon ? `<span class="event-soon-badge">SOON</span>` : '';
 
       const posterHtml = poster
         ? `<img src="${esc(poster)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-radius:10px 10px 0 0;background:var(--g2)" loading="lazy" onerror="this.style.display='none'">`
         : '';
 
-      return `<div class="event-card${isLive?' live-card':''}" onclick="openMatch(${JSON.stringify(m).replace(/'/g,"\'").replace(/"/g,'&quot;')})">
+      return `<div class="event-card${isLive?' live-card':''}" onclick="openMatch(window._renderedMatches[${idx}])" style="cursor:pointer">
         ${posterHtml}
         <div style="padding:14px 16px">
           <div class="event-header" style="margin-bottom:8px">
@@ -662,12 +662,7 @@
           </div>
           ${league ? `<div style="font-size:.72rem;color:var(--g5);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">${esc(league)}</div>` : ''}
           <div class="event-name">${esc(title)}</div>
-          ${m.home && m.away ? `
-            <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px;padding:8px;background:rgba(0,180,60,.06);border-radius:8px">
-              <span style="font-size:.85rem;font-weight:600;text-align:right;flex:1">${esc(m.home)}</span>
-              <span style="font-size:.72rem;color:var(--muted);font-weight:700">VS</span>
-              <span style="font-size:.85rem;font-weight:600;text-align:left;flex:1">${esc(m.away)}</span>
-            </div>` : ''}
+          ${m.home && m.away ? `<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px;padding:8px;background:rgba(0,180,60,.06);border-radius:8px"><span style="font-size:.85rem;font-weight:600;text-align:right;flex:1">${esc(m.home)}</span><span style="font-size:.72rem;color:var(--muted);font-weight:700">VS</span><span style="font-size:.85rem;font-weight:600;text-align:left;flex:1">${esc(m.away)}</span></div>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -766,7 +761,7 @@
       renderF1Events(sessions, meetings);
     } catch(e){
       console.warn('F1 fetch failed:', e);
-      grid.innerHTML=`<div class="event-card f1-card" onclick='openMatchById("🏎️ F1 Live Channels",[{"name":"Sky Sports F1 UK","id":"60"},{"name":"Sky Sports F1 DE","id":"274"},{"name":"Sky Sport F1 Italy","id":"577"},{"name":"Sky Sports Main Event","id":"38"}])' style="grid-column:1/-1;text-align:center;padding:32px">
+      grid.innerHTML=`<div class="event-card f1-card" onclick='openF1Stream('F1 Live Channels')' style="grid-column:1/-1;text-align:center;padding:32px">
         <div class="event-sport-icon">🏎️</div>
         <div class="event-name">Watch F1 Live Now</div>
         <p style="color:var(--muted);font-size:.85rem;margin-top:8px">Sky Sports F1 UK · DE · Italy — click to open streams</p>
@@ -774,91 +769,69 @@
     }
   }
 
+  // F1 channel lookup — stored globally so onclick can reference by key safely
+  const F1_CHANNELS = [
+    {name:'Sky Sports F1 UK', id:'60'},
+    {name:'Sky Sports F1 DE', id:'274'},
+    {name:'Sky Sport F1 Italy', id:'577'},
+    {name:'Sky Sports Main Event', id:'38'},
+    {name:'Sky Sports+', id:'36'}
+  ];
+
   function renderF1Events(sessions, meetings){
     const grid=document.getElementById('eventsGrid');
     if(!sessions?.length){ grid.innerHTML=''; document.getElementById('sportsEmpty').style.display='block'; return; }
 
     const now=new Date();
-    const cards=sessions.slice(0,6).map(sess=>{
+
+    // Pinned always-on card
+    let html = `<div class="event-card f1-card" onclick="openF1Stream('F1 Live Channels — Sky Sports')" style="border-color:rgba(220,0,0,.4);background:rgba(80,0,0,.18);cursor:pointer">
+      <div class="event-header"><span class="event-time">&#128225; 24/7 Live Channel</span><span class="event-live-badge">&#9679; ON AIR</span></div>
+      <div class="event-sport-icon">&#127950;</div>
+      <div class="event-name">Watch F1 Channels Now</div>
+      <p style="color:var(--muted);font-size:.82rem;margin:6px 0 10px">Sky Sports F1 UK &middot; DE &middot; Italy</p>
+      <div class="event-channels"><span class="channel-badge">Sky Sports F1 UK</span><span class="channel-badge">Sky Sports F1 DE</span><span class="channel-badge">Sky Sport F1 Italy</span></div>
+    </div>`;
+
+    html += sessions.slice(0,6).map((sess,idx)=>{
       const start=new Date(sess.date_start);
-      const end=sess.date_end ? new Date(sess.date_end) : new Date(start.getTime()+7200000);
-      const isLive=now>=start && now<=end;
-      const isPast=now>end;
+      const end2=sess.date_end ? new Date(sess.date_end) : new Date(start.getTime()+7200000);
+      const isLive=now>=start && now<=end2;
+      const isPast=now>end2;
       const isSoon=!isLive && !isPast && (start-now)<86400000;
-
-      const badge=isLive
-        ? `<span class="event-live-badge">● LIVE</span>`
-        : isSoon ? `<span class="event-soon-badge">SOON</span>`
-        : isPast ? `<span class="m-tag" style="font-size:.7rem">FINISHED</span>` : '';
-
+      const badge=isLive?'<span class="event-live-badge">&#9679; LIVE</span>':isSoon?'<span class="event-soon-badge">SOON</span>':isPast?'<span class="m-tag" style="font-size:.7rem">FINISHED</span>':'';
       const dateStr=start.toLocaleDateString('en-GB',{weekday:'short',month:'short',day:'numeric'});
       const timeStr=start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-
-      // Confirmed DaddyLive channel IDs for F1
-      const f1Channels=[
-        {name:'Sky Sports F1 UK',id:'60'},
-        {name:'Sky Sports F1 DE',id:'274'},
-        {name:'Sky Sport F1 Italy',id:'577'},
-        {name:'Sky Sports Main Event',id:'38'},
-        {name:'Sky Sports+',id:'36'}
-      ];
-      const chData=JSON.stringify(f1Channels).replace(/"/g,'&quot;');
-
-      return `<div class="event-card f1-card" onclick='openMatchById("${esc(sess.session_name||'F1 Session')} — ${esc(sess.location||'')}",${chData})'>
-        <div class="event-header">
-          <span class="event-time">📅 ${dateStr} ${timeStr}</span>
-          ${badge}
-        </div>
-        <div class="event-sport-icon">🏎️</div>
-        <div class="event-name">${esc(sess.session_name||'Session')} — ${esc(sess.location||sess.country_name||'')}</div>
-        <div class="event-channels">
-          <span class="channel-badge">Sky Sports F1 UK</span>
-          <span class="channel-badge">Sky Sports F1 DE</span>
-          <span class="channel-badge">Sky Sport F1 Italy</span>
-        </div>
+      const label=esc((sess.session_name||'Session')+' — '+(sess.location||sess.country_name||''));
+      return `<div class="event-card f1-card" onclick="openF1Stream('${label}')" style="cursor:pointer">
+        <div class="event-header"><span class="event-time">&#128197; ${dateStr} ${timeStr}</span>${badge}</div>
+        <div class="event-sport-icon">&#127950;</div>
+        <div class="event-name">${label}</div>
+        <div class="event-channels"><span class="channel-badge">Sky Sports F1</span><span class="channel-badge">F1 TV</span></div>
       </div>`;
     }).join('');
 
-    // Add a pinned "Watch F1 Channels Now" card at the top
-    const pinned=`<div class="event-card f1-card" onclick='openMatchById("🏎️ F1 Live Channels",[{"name":"Sky Sports F1 UK","id":"60"},{"name":"Sky Sports F1 DE","id":"274"},{"name":"Sky Sport F1 Italy","id":"577"},{"name":"Sky Sports Main Event","id":"38"},{"name":"Sky Sports+","id":"36"}])' style="border-color:rgba(220,0,0,.4);background:rgba(80,0,0,.18)">
-      <div class="event-header"><span class="event-time">📡 24/7 Live Channel</span><span class="event-live-badge">● ON AIR</span></div>
-      <div class="event-sport-icon">🏎️</div>
-      <div class="event-name">Watch F1 Channels Now</div>
-      <p style="color:var(--muted);font-size:.82rem;margin:6px 0 10px">Sky Sports F1 UK · DE · Italy — always on</p>
-      <div class="event-channels">
-        <span class="channel-badge">Sky Sports F1 UK</span>
-        <span class="channel-badge">Sky Sports F1 DE</span>
-        <span class="channel-badge">Sky Sport F1 Italy</span>
-      </div>
-    </div>`;
-
-    grid.innerHTML = pinned + cards;
+    grid.innerHTML = html;
   }
 
-
-
-  /* ── EVENT LISTENERS ── */
-  document.getElementById('modal').addEventListener('click',e=>{ if(e.target===document.getElementById('modal')) closeModal(); });
-  // removed('click',e=>{  });
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closeInlinePlayer(); } });
-  document.getElementById('searchInput').addEventListener('keydown',e=>{ if(e.key==='Enter') doSearch(); });
-
-  // Shim for F1 cards that pass channel list directly
-  function openMatchById(title, channels){
-    const panel = document.getElementById('inlinePlayer');
-    const frame = document.getElementById('sportsPlayerFrame');
-    document.getElementById('playerMatchTitle').textContent = title;
-    document.getElementById('playerMatchMeta').textContent = 'DaddyLive Stream';
+  function openF1Stream(title){
+    const panel   = document.getElementById('inlinePlayer');
+    const frame   = document.getElementById('sportsPlayerFrame');
+    const titleEl = document.getElementById('playerMatchTitle');
+    const metaEl  = document.getElementById('playerMatchMeta');
     const srcBtns = document.getElementById('playerSourceBtns');
-    if(!channels || !channels.length){ srcBtns.innerHTML='<span style="font-size:.78rem;color:#ff7070">No streams</span>'; return; }
-    frame.src = `https://dlstreams.top/stream/stream-${channels[0].id}.php`;
-    srcBtns.innerHTML = channels.map((ch,i)=>
+    titleEl.textContent = title;
+    metaEl.textContent  = 'DaddyLive — Sky Sports F1';
+    frame.src = 'https://dlstreams.top/stream/stream-60.php';
+    srcBtns.innerHTML = F1_CHANNELS.map((ch,i)=>
       `<button onclick="document.getElementById('sportsPlayerFrame').src='https://dlstreams.top/stream/stream-${ch.id}.php';document.querySelectorAll('#playerSourceBtns button').forEach(b=>b.style.background='rgba(0,180,60,.08)');this.style.background='rgba(0,180,60,.3)'"
         style="background:${i===0?'rgba(0,180,60,.3)':'rgba(0,180,60,.08)'};border:1px solid rgba(0,180,60,.2);border-radius:7px;color:var(--g6);padding:5px 11px;font-size:.76rem;cursor:pointer;font-family:'DM Sans',sans-serif">${ch.name}</button>`
     ).join('');
-    panel.style.display = 'block';
+    panel.style.display='block';
     panel.scrollIntoView({behavior:'smooth',block:'start'});
   }
+
+
 
 </script>
 </body>
