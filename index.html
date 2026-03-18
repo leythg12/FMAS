@@ -261,46 +261,28 @@ footer a{color:var(--g5);text-decoration:none}
 
   <!-- SPORTS -->
   <div id="sportsView" style="display:none">
-    <div class="content" style="padding-top:28px">
-      <div class="sport-tabs" id="sportTabs"></div>
-
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px">
-        <div style="position:relative;flex:1;min-width:180px;max-width:380px">
-          <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input id="sportsSearch" type="text" placeholder="Filter matches…"
-            style="width:100%;padding:9px 14px 9px 36px;background:rgba(0,40,16,.7);border:1.5px solid rgba(0,200,80,.22);border-radius:100px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.87rem;outline:none"/>
-        </div>
-        <span id="matchCount" style="font-size:.82rem;color:var(--muted)"></span>
-        <button id="refreshBtn" style="background:rgba(0,180,60,.1);border:1px solid rgba(0,200,80,.2);border-radius:8px;color:var(--g6);padding:8px 14px;font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif">↻ Refresh</button>
+    <div class="content" style="padding-top:32px">
+      <div style="margin-bottom:24px">
+        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.6rem">🏎️ Formula 1 <em style="color:var(--g5);font-style:normal">Live</em></span>
+        <p style="color:var(--muted);font-size:.9rem;margin-top:6px">Live race coverage — click a source to watch</p>
       </div>
 
-      <div class="events-grid" id="eventsGrid"></div>
-      <div class="empty" id="emptySports" style="display:none">
-        <div class="empty-icon">📡</div>
-        <h3>No matches scheduled</h3>
-        <p>Check back soon or try another sport</p>
-      </div>
+      <!-- F1 source selector -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="f1SourceBtns"></div>
 
-      <!-- Inline player -->
-      <div id="inlinePlayer">
-        <div class="player-header">
-          <div>
-            <div class="player-title" id="playerTitle"></div>
-            <div class="player-meta" id="playerMeta"></div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <span style="font-size:.78rem;color:var(--muted)">Source:</span>
-            <div id="sourceBtns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
-            <button class="close-btn" id="closePlayerBtn">✕ Close</button>
-          </div>
-        </div>
-        <div class="player-box">
-          <div class="aspect">
-            <iframe id="sportsFrame" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>
-          </div>
+      <!-- Player -->
+      <div style="border:1px solid rgba(0,200,80,.2);border-radius:18px;overflow:hidden;background:#000">
+        <div style="aspect-ratio:16/9">
+          <iframe id="f1Frame" allowfullscreen allow="autoplay; fullscreen; encrypted-media"
+            style="width:100%;height:100%;border:none;display:block"></iframe>
         </div>
       </div>
 
+      <!-- F1 Schedule from OpenF1 -->
+      <div style="margin-top:32px">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:16px">📅 2025 Season Sessions</div>
+        <div id="f1Schedule" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
+      </div>
     </div>
   </div>
 
@@ -373,7 +355,7 @@ const F1_CHANNELS = [
 /* ══════════════════════════════════════════
    STATE
 ══════════════════════════════════════════ */
-let KEY          = '';
+let KEY          = '02e182cf0f2f661b979789ec44ce9604'; // hardcoded — no login needed
 let mediaType    = 'movie';
 let activeItem   = null;
 let seasons      = [];
@@ -435,7 +417,6 @@ function launchApp(){
   document.getElementById('setup').style.display = 'none';
   document.getElementById('app').style.display   = 'block';
   bindNav();
-  buildSportTabs();
   loadTrending();
 }
 
@@ -449,8 +430,10 @@ function resetKey(){
 }
 
 (function init(){
+  // Always launch directly — key is hardcoded above
   var saved = localStorage.getItem('fmas_key');
-  if(saved){ KEY = saved; launchApp(); }
+  if(saved) KEY = saved; // allow override from localStorage if user set one
+  launchApp();
 })();
 
 /* ══════════════════════════════════════════
@@ -471,7 +454,7 @@ function showSection(sec){
     var id = s === 'movies' ? 'nb-movies' : s === 'tv' ? 'nb-tv' : 'nb-sports';
     document.getElementById(id).classList.toggle('active', s === sec);
   });
-  if(sec === 'sports') loadSports();
+  if(sec === 'sports') initF1();
   if(sec === 'tv'){ mediaType = 'tv'; switchTab('tv'); }
   if(sec === 'movies'){ mediaType = 'movie'; switchTab('movie'); }
 }
@@ -961,4 +944,68 @@ document.addEventListener('keydown', function(e){
 });
 </script>
 </body>
-</html>
+</html>  /* ═══ F1 ═══ */
+
+  // Free F1 stream sources — no ads, no unmute tricks
+  var F1_SOURCES = [
+    { name: '🔴 F1TV Stream 1',   url: 'https://dlstreams.top/stream/stream-60.php'  },
+    { name: '🔴 F1TV Stream 2',   url: 'https://dlstreams.top/stream/stream-274.php' },
+    { name: '🔴 F1TV Stream 3',   url: 'https://dlstreams.top/stream/stream-577.php' },
+    { name: '📺 Sky Sports F1',   url: 'https://dlstreams.top/cast/stream-60.php'    },
+    { name: '📺 Sky F1 Alt',      url: 'https://dlstreams.top/watch/stream-60.php'   },
+  ];
+
+  var currentF1Source = 0;
+
+  function initF1(){
+    var btns = document.getElementById('f1SourceBtns');
+    btns.innerHTML = '';
+    F1_SOURCES.forEach(function(src, i){
+      var btn = document.createElement('button');
+      btn.textContent = src.name;
+      btn.className = 'src-btn' + (i === 0 ? ' active' : '');
+      btn.addEventListener('click', function(){
+        btns.querySelectorAll('.src-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById('f1Frame').src = src.url;
+        currentF1Source = i;
+      });
+      btns.appendChild(btn);
+    });
+    // Load first source
+    document.getElementById('f1Frame').src = F1_SOURCES[0].url;
+    loadF1Schedule();
+  }
+
+  async function loadF1Schedule(){
+    var grid = document.getElementById('f1Schedule');
+    grid.innerHTML = '<div style="color:var(--muted);font-size:.85rem">Loading schedule…</div>';
+    try{
+      var res  = await fetch('https://api.openf1.org/v1/sessions?year=2025&order_by=date_start&limit=30');
+      var sess = await res.json();
+      if(!Array.isArray(sess) || !sess.length){ grid.innerHTML = '<div style="color:var(--muted);font-size:.85rem">No sessions found.</div>'; return; }
+      var now  = new Date();
+      var html = '';
+      sess.forEach(function(s){
+        var start  = new Date(s.date_start);
+        var end    = s.date_end ? new Date(s.date_end) : new Date(start.getTime() + 7200000);
+        var isLive = now >= start && now <= end;
+        var isPast = now > end;
+        var isSoon = !isLive && !isPast && (start - now) < 86400000;
+        var badge  = isLive ? '<span class="live-badge" style="margin-left:6px">● LIVE</span>'
+                   : isSoon ? '<span class="soon-badge" style="margin-left:6px">SOON</span>' : '';
+        var ds = start.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+        var ts = start.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        var name = h((s.session_name||'Session') + ' — ' + (s.location||s.country_name||''));
+        var opacity = isPast ? 'opacity:.45;' : '';
+        html += '<div style="background:rgba(0,40,16,.55);border:1px solid ' + (isLive ? 'rgba(255,68,68,.4)' : 'var(--border)') + ';border-radius:12px;padding:14px 16px;' + opacity + '">'
+          + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:5px">📅 ' + ds + ' · ' + ts + badge + '</div>'
+          + '<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem">🏎️ ' + name + '</div>'
+          + (isLive ? '<div style="font-size:.76rem;color:var(--g5);margin-top:6px;cursor:pointer" onclick="document.getElementById('f1Frame').scrollIntoView({behavior:'smooth'})">▶ Watch now ↑</div>' : '')
+          + '</div>';
+      });
+      grid.innerHTML = html;
+    } catch(e){
+      grid.innerHTML = '<div style="color:var(--muted);font-size:.85rem">Could not load schedule.</div>';
+    }
+  }
