@@ -340,7 +340,7 @@
      CONFIG
   ═══════════════════════════════════════════ */
   const VIDKING_PARAMS = 'color=00e050&autoPlay=true&nextEpisode=true&episodeSelector=true';
-  const DADDY_BASE     = 'https://dlstreams.top';
+  const DADDY_BASE     = 'https://dlstreams.top'; // primary domain
   const CORS_PROXY     = 'https://corsproxy.io/?url=';
   const TMDB           = 'https://api.themoviedb.org/3';
   const IMG_SM         = 'https://image.tmdb.org/t/p/w342';
@@ -558,28 +558,49 @@
       grid.parentNode.insertBefore(bar, grid);
     }
 
-    // Try multiple CORS proxies in order
+    // Try multiple strategies — direct first, then proxies
     const SCHEDULE_URL = DADDY_BASE + '/schedule.php';
+    const ALT_URL      = 'https://dlhd.sx/schedule.php';
     const proxies = [
+      SCHEDULE_URL,
+      ALT_URL,
       `https://corsproxy.io/?url=${encodeURIComponent(SCHEDULE_URL)}`,
       `https://api.allorigins.win/raw?url=${encodeURIComponent(SCHEDULE_URL)}`,
-      `https://proxy.cors.sh/${SCHEDULE_URL}`,
+      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(SCHEDULE_URL)}`,
+      `https://thingproxy.freeboard.io/fetch/${SCHEDULE_URL}`,
+      `https://corsproxy.io/?url=${encodeURIComponent(ALT_URL)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(ALT_URL)}`,
     ];
 
     let schedule = null;
     for(const proxy of proxies){
       try{
-        const r = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
-        if(!r.ok) continue;
+        console.log('Trying:', proxy);
+        const r = await fetch(proxy, {
+          signal: AbortSignal.timeout(10000),
+          headers: proxy === SCHEDULE_URL || proxy === ALT_URL
+            ? {}  // no extra headers for direct fetch
+            : {'X-Requested-With': 'XMLHttpRequest'}
+        });
+        if(!r.ok){ console.warn('HTTP', r.status, proxy); continue; }
         const text = await r.text();
+        if(!text || text.length < 50){ continue; }
         // Try direct JSON parse
-        try{ schedule = JSON.parse(text); break; }
+        try{ schedule = JSON.parse(text); if(schedule && typeof schedule === 'object'){ console.log('Got schedule from:', proxy); break; } }
         catch{
-          // Try extracting from HTML/JS variable
-          const m = text.match(/(?:var\s+schedule|scheduleData)\s*=\s*(\{[\s\S]*?\});/);
-          if(m){ try{ schedule = JSON.parse(m[1]); break; }catch{} }
+          // Try extracting JSON from HTML page
+          const patterns = [
+            /var\s+schedule\s*=\s*(\{[\s\S]*?\});\s*(?:\/\/|var|let|const|<)/,
+            /scheduleData\s*=\s*(\{[\s\S]*?\});\s*(?:\/\/|var|let|const|<)/,
+            /(\{"[A-Z][a-z].*?:\[.*?\]\})/,
+          ];
+          for(const pat of patterns){
+            const m = text.match(pat);
+            if(m){ try{ schedule = JSON.parse(m[1]); if(schedule){ console.log('Extracted from HTML:', proxy); break; } }catch{} }
+          }
+          if(schedule) break;
         }
-      } catch(e){ console.warn('Proxy failed:', proxy, e); }
+      } catch(e){ console.warn('Fetch failed:', proxy, e.message); }
     }
 
     if(!schedule){ renderFootballFallback(); return; }
@@ -687,14 +708,29 @@
 
   function renderFootballFallback(){
     const grid = document.getElementById('eventsGrid');
-    grid.innerHTML = `<div class="event-card" style="grid-column:1/-1;text-align:center;padding:36px 24px">
-      <div style="font-size:2.5rem;margin-bottom:12px">📡</div>
-      <div class="event-name">Could not load schedule</div>
-      <p style="color:var(--muted);font-size:.85rem;margin:10px 0 16px;line-height:1.6">The schedule proxy is temporarily unavailable.<br/>Click below to view all matches directly on DaddyLive.</p>
-      <button onclick="window.open('${DADDY_BASE}','_blank')" style="background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:100px;padding:10px 24px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">
-        Open DaddyLive →
-      </button>
-    </div>`;
+    // Embed DaddyLive schedule page directly in an iframe as ultimate fallback
+    grid.innerHTML = `
+      <div style="grid-column:1/-1">
+        <div style="background:rgba(0,40,16,.5);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">📡 Live Football Schedule</span>
+            <div style="display:flex;gap:8px">
+              <button onclick="document.getElementById('daddyIframe').src=document.getElementById('daddyIframe').src"
+                style="background:rgba(0,180,60,.15);border:1px solid rgba(0,200,80,.3);border-radius:8px;color:var(--g6);padding:5px 12px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif">
+                ↻ Refresh
+              </button>
+              <button onclick="window.open('${DADDY_BASE}','_blank')"
+                style="background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:8px;color:#fff;padding:5px 12px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">
+                Open Full Site ↗
+              </button>
+            </div>
+          </div>
+          <iframe id="daddyIframe" src="${DADDY_BASE}"
+            style="width:100%;height:600px;border:none;display:block;background:#000"
+            allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation">
+          </iframe>
+        </div>
+      </div>`;
   }
 
   function isEventLive(timeStr, now){
