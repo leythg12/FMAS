@@ -267,12 +267,7 @@
 
   <!-- SPORTS VIEW -->
   <div id="sportsView" style="display:none">
-    <div class="hero" style="padding-bottom:20px">
-      <div class="badge">Live Sports — DaddyLive &amp; OpenF1</div>
-      <h1>⚽ Live <em>Football</em> &amp; 🏎️ <em>F1</em></h1>
-      <p class="hero-sub">Today's live and upcoming matches — click any event to watch.</p>
-    </div>
-    <div class="content">
+    <div class="content" style="padding-top:24px">
       <div class="sports-tabs" id="sportsTabs">
         <button class="sport-tab active" data-sport="football" onclick="selectSport('football',this)">
           <span class="live-dot"></span> Football
@@ -281,11 +276,79 @@
           🏎️ Formula 1
         </button>
       </div>
-      <div class="events-grid" id="eventsGrid"></div>
-      <div class="empty" id="sportsEmpty" style="display:none">
-        <div class="empty-icon">📡</div>
-        <h3>No events right now</h3>
-        <p>Check back closer to match time</p>
+
+      <!-- FOOTBALL: embedded DaddyLive schedule + stream player -->
+      <div id="footballSection">
+
+        <!-- Step 1: Schedule embed -->
+        <div id="schedulePanel">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+            <div>
+              <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem">⚽ Today's Matches</span>
+              <p style="color:var(--muted);font-size:.82rem;margin-top:3px">Browse the schedule below — click a match title or channel to stream it here.</p>
+            </div>
+            <button onclick="refreshSchedule()" style="background:rgba(0,180,60,.12);border:1px solid rgba(0,200,80,.25);border-radius:8px;color:var(--g6);padding:7px 16px;font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer">↻ Refresh</button>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#0a1a0e">
+            <iframe id="scheduleFrame"
+              src="https://dlstreams.top"
+              style="width:100%;height:650px;border:none;display:block"
+              allow="autoplay;fullscreen"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation">
+            </iframe>
+          </div>
+          <p style="color:var(--muted);font-size:.78rem;margin-top:10px;text-align:center">
+            💡 Click any match on the schedule above to open it — or use the quick stream launcher below
+          </p>
+        </div>
+
+        <!-- Step 2: Quick stream by channel ID -->
+        <div style="margin-top:24px;background:rgba(0,40,16,.5);border:1px solid var(--border);border-radius:16px;padding:20px 22px">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:6px">🎯 Quick Stream by Channel ID</div>
+          <p style="color:var(--muted);font-size:.83rem;margin-bottom:14px">Find the channel ID on DaddyLive (e.g. id=2 from the URL <code style="background:rgba(0,180,60,.1);padding:1px 5px;border-radius:4px;font-size:.8rem">watch.php?id=2</code>) and paste it below to stream instantly.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input id="chanIdInput" type="number" min="1" placeholder="Channel ID (e.g. 2, 60, 215…)"
+              style="flex:1;min-width:180px;padding:11px 16px;background:rgba(0,20,8,.8);border:1.5px solid rgba(0,200,80,.25);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem;outline:none"
+              onkeydown="if(event.key==='Enter')launchChannel()"/>
+            <button onclick="launchChannel()" style="background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:10px;padding:11px 22px;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.9rem;cursor:pointer;white-space:nowrap">
+              ▶ Watch
+            </button>
+          </div>
+          <!-- Popular football channels -->
+          <div style="margin-top:14px">
+            <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px">Popular football channels:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px" id="quickChannels"></div>
+          </div>
+        </div>
+
+        <!-- Stream player (hidden until activated) -->
+        <div id="streamPanel" style="display:none;margin-top:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+            <span id="streamLabel" style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem"></span>
+            <button onclick="closeStream()" style="background:rgba(220,50,50,.15);border:1px solid rgba(220,50,50,.3);border-radius:8px;color:#ff9090;padding:6px 14px;font-size:.82rem;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Close</button>
+          </div>
+          <div style="border:1px solid rgba(0,200,80,.2);border-radius:16px;overflow:hidden;background:#000">
+            <div style="aspect-ratio:16/9">
+              <iframe id="liveStreamFrame" style="width:100%;height:100%;border:none;display:block"
+                allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>
+            </div>
+            <!-- Source switcher -->
+            <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <span style="font-size:.8rem;color:var(--muted)">Try another source:</span>
+              <div id="sourceBtns"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- F1 section -->
+      <div id="f1Section" style="display:none">
+        <div class="events-grid" id="eventsGrid"></div>
+        <div class="empty" id="sportsEmpty" style="display:none">
+          <div class="empty-icon">📡</div>
+          <h3>No events right now</h3>
+          <p>Check back closer to race time</p>
+        </div>
       </div>
     </div>
   </div>
@@ -524,232 +587,88 @@
   }
 
   /* ═══ SPORTS ═══ */
+
+  // Popular football channels on DaddyLive (confirmed IDs)
+  const FOOTBALL_CHANNELS = [
+    {name:'Sky Sports Football',id:'37'},{name:'Sky Sports PL',id:'38'},
+    {name:'Sky Sports Main',id:'36'},{name:'TNT Sports 1 UK',id:'48'},
+    {name:'TNT Sports 2 UK',id:'49'},{name:'TNT Sports 3 UK',id:'50'},
+    {name:'TNT Sports 4 UK',id:'51'},{name:'beIN Sports 1',id:'157'},
+    {name:'beIN Sports 2',id:'158'},{name:'beIN Sports 3',id:'159'},
+    {name:'DAZN LaLiga',id:'302'},{name:'DAZN Ligue 1',id:'43'},
+    {name:'ESPN USA',id:'22'},{name:'ESPN2 USA',id:'23'},
+    {name:'Fox Sports 1',id:'26'},{name:'Fox Sports 2',id:'27'},
+    {name:'SuperSport Premier',id:'240'},{name:'Movistar LaLiga',id:'116'},
+    {name:'Canal+ Sport',id:'171'},{name:'Sport TV1 PT',id:'192'},
+  ];
+
+  // Stream folder variants to try
+  const STREAM_FOLDERS = ['stream','cast','watch','plus','casting','player'];
+
   function selectSport(sport, el){
-    currentSport=sport;
+    currentSport = sport;
     document.querySelectorAll('.sport-tab').forEach(b=>b.classList.remove('active'));
     el.classList.add('active');
-    loadSports();
+    document.getElementById('footballSection').style.display = sport==='football' ? 'block' : 'none';
+    document.getElementById('f1Section').style.display = sport==='f1' ? 'block' : 'none';
+    if(sport==='f1') loadF1();
   }
 
   async function loadSports(){
-    document.getElementById('sportsEmpty').style.display='none';
-    if(currentSport==='football') await loadFootball();
-    else await loadF1();
+    document.getElementById('footballSection').style.display = currentSport==='football' ? 'block' : 'none';
+    document.getElementById('f1Section').style.display = currentSport==='f1' ? 'block' : 'none';
+    // Render quick channel buttons
+    renderQuickChannels();
+    if(currentSport==='f1') loadF1();
   }
 
-  /* ── FOOTBALL via DaddyLive schedule ── */
-  let allFootballEvents = []; // store for filtering
-
-  async function loadFootball(){
-    const grid = document.getElementById('eventsGrid');
-    document.getElementById('sportsEmpty').style.display = 'none';
-    grid.innerHTML = Array(8).fill(0).map(()=>`<div class="skel-event"></div>`).join('');
-
-    // Inject search bar above grid if not already there
-    if(!document.getElementById('footballSearch')){
-      const bar = document.createElement('div');
-      bar.style.cssText = 'margin-bottom:18px;position:relative;max-width:480px';
-      bar.innerHTML = `
-        <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input id="footballSearch" type="text" placeholder="Filter matches…"
-          style="width:100%;padding:11px 16px 11px 40px;background:rgba(0,40,16,.7);border:1.5px solid rgba(0,200,80,.22);border-radius:100px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;"
-          oninput="filterFootball(this.value)"/>
-        <span id="matchCount" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:.75rem;color:var(--muted)"></span>`;
-      grid.parentNode.insertBefore(bar, grid);
-    }
-
-    // Try multiple strategies — direct first, then proxies
-    const SCHEDULE_URL = DADDY_BASE + '/schedule.php';
-    const ALT_URL      = 'https://dlhd.sx/schedule.php';
-    const proxies = [
-      SCHEDULE_URL,
-      ALT_URL,
-      `https://corsproxy.io/?url=${encodeURIComponent(SCHEDULE_URL)}`,
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(SCHEDULE_URL)}`,
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(SCHEDULE_URL)}`,
-      `https://thingproxy.freeboard.io/fetch/${SCHEDULE_URL}`,
-      `https://corsproxy.io/?url=${encodeURIComponent(ALT_URL)}`,
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(ALT_URL)}`,
-    ];
-
-    let schedule = null;
-    for(const proxy of proxies){
-      try{
-        console.log('Trying:', proxy);
-        const r = await fetch(proxy, {
-          signal: AbortSignal.timeout(10000),
-          headers: proxy === SCHEDULE_URL || proxy === ALT_URL
-            ? {}  // no extra headers for direct fetch
-            : {'X-Requested-With': 'XMLHttpRequest'}
-        });
-        if(!r.ok){ console.warn('HTTP', r.status, proxy); continue; }
-        const text = await r.text();
-        if(!text || text.length < 50){ continue; }
-        // Try direct JSON parse
-        try{ schedule = JSON.parse(text); if(schedule && typeof schedule === 'object'){ console.log('Got schedule from:', proxy); break; } }
-        catch{
-          // Try extracting JSON from HTML page
-          const patterns = [
-            /var\s+schedule\s*=\s*(\{[\s\S]*?\});\s*(?:\/\/|var|let|const|<)/,
-            /scheduleData\s*=\s*(\{[\s\S]*?\});\s*(?:\/\/|var|let|const|<)/,
-            /(\{"[A-Z][a-z].*?:\[.*?\]\})/,
-          ];
-          for(const pat of patterns){
-            const m = text.match(pat);
-            if(m){ try{ schedule = JSON.parse(m[1]); if(schedule){ console.log('Extracted from HTML:', proxy); break; } }catch{} }
-          }
-          if(schedule) break;
-        }
-      } catch(e){ console.warn('Fetch failed:', proxy, e.message); }
-    }
-
-    if(!schedule){ renderFootballFallback(); return; }
-
-    // Collect ALL football events across ALL days in schedule
-    const events = [];
-    const footballKeywords = ['football','soccer','premier','league','champions','la liga','serie a','bundesliga','ligue','fa cup','copa','eredivisie','nation'];
-
-    for(const dayKey of Object.keys(schedule)){
-      const dayData = schedule[dayKey] || {};
-      for(const category of Object.keys(dayData)){
-        const lower = category.toLowerCase();
-        const isFootball = footballKeywords.some(k => lower.includes(k));
-        if(isFootball){
-          for(const ev of (dayData[category]||[])){
-            events.push({ ...ev, league: category, day: dayKey });
-          }
-        }
-      }
-    }
-
-    // Sort: LIVE first, then by time
-    const now = new Date();
-    events.sort((a,b)=>{
-      const aLive = isEventLive(a.time||'', now) ? 0 : 1;
-      const bLive = isEventLive(b.time||'', now) ? 0 : 1;
-      if(aLive !== bLive) return aLive - bLive;
-      return (a.time||'').localeCompare(b.time||'');
-    });
-
-    allFootballEvents = events;
-    renderFootballEvents(events);
+  function renderQuickChannels(){
+    const el = document.getElementById('quickChannels');
+    if(!el) return;
+    el.innerHTML = FOOTBALL_CHANNELS.map(ch=>
+      `<button onclick="streamChannel('${ch.id}','${ch.name.replace(/'/g,"\\'")}','${ch.id}')"
+        style="background:rgba(0,180,60,.1);border:1px solid rgba(0,180,60,.2);border-radius:7px;color:var(--g6);padding:4px 10px;font-size:.76rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s"
+        onmouseover="this.style.background='rgba(0,180,60,.25)'" onmouseout="this.style.background='rgba(0,180,60,.1)'"
+      >${esc(ch.name)}</button>`
+    ).join('');
   }
 
-  function filterFootball(query){
-    const q = query.toLowerCase().trim();
-    const filtered = q ? allFootballEvents.filter(ev =>
-      (ev.event||'').toLowerCase().includes(q) ||
-      (ev.league||'').toLowerCase().includes(q)
-    ) : allFootballEvents;
-    renderFootballEvents(filtered);
+  function launchChannel(){
+    const id = document.getElementById('chanIdInput').value.trim();
+    if(!id){ return; }
+    streamChannel(id, 'Channel ' + id, id);
   }
 
-  function renderFootballEvents(events){
-    const grid = document.getElementById('eventsGrid');
-    const countEl = document.getElementById('matchCount');
-    if(countEl) countEl.textContent = `${events.length} matches`;
+  function streamChannel(channelId, label, id){
+    const panel = document.getElementById('streamPanel');
+    const frame = document.getElementById('liveStreamFrame');
+    const lbl   = document.getElementById('streamLabel');
+    const btns  = document.getElementById('sourceBtns');
 
-    if(!events.length){
-      grid.innerHTML = '';
-      document.getElementById('sportsEmpty').style.display = 'block';
-      return;
-    }
-    document.getElementById('sportsEmpty').style.display = 'none';
+    lbl.textContent = '▶ ' + label;
+    panel.style.display = 'block';
+    panel.scrollIntoView({behavior:'smooth', block:'start'});
 
-    const now = new Date();
+    // Load with first folder
+    frame.src = `https://dlstreams.top/stream/stream-${channelId}.php`;
 
-    // Group by league
-    const byLeague = {};
-    for(const ev of events){
-      const league = ev.league || 'Football';
-      if(!byLeague[league]) byLeague[league] = [];
-      byLeague[league].push(ev);
-    }
-
-    let html = '';
-    for(const [league, matches] of Object.entries(byLeague)){
-      html += `<div style="grid-column:1/-1;margin:12px 0 4px;display:flex;align-items:center;gap:10px">
-        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;color:var(--g6)">⚽ ${esc(league)}</span>
-        <span style="font-size:.75rem;color:var(--muted)">${matches.length} match${matches.length>1?'es':''}</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>`;
-
-      for(const ev of matches){
-        const channels = ev.channels || [];
-        const allCh = [...channels, ...(ev.channels2||[])];
-        const timeStr = ev.time || '';
-        const isLive = isEventLive(timeStr, now);
-        const isSoon = isEventSoon(timeStr, now);
-        const badge = isLive
-          ? `<span class="event-live-badge">● LIVE</span>`
-          : isSoon ? `<span class="event-soon-badge">SOON</span>` : '';
-
-        const chHtml = allCh.slice(0,5).map(c=>`<span class="channel-badge">${esc(c.channel_name)}</span>`).join('');
-        const chData = JSON.stringify(allCh.map(c=>({name:c.channel_name,id:c.channel_id}))).replace(/"/g,'&quot;');
-        const title = esc(ev.event||'Match');
-
-        html += `<div class="event-card${isLive?' live-card':''}" onclick='openSportsModal("${title}",${chData})'>
-          <div class="event-header">
-            <span class="event-time">🕐 ${timeStr||'TBD'} UK</span>
-            ${badge}
-          </div>
-          <div class="event-name" style="margin-top:4px">${title}</div>
-          <div class="event-channels" style="margin-top:8px">
-            ${chHtml}
-            ${allCh.length>5?`<span class="channel-badge">+${allCh.length-5} more</span>`:''}
-            ${!allCh.length?`<span style="font-size:.75rem;color:var(--muted)">No stream available yet</span>`:''}
-          </div>
-        </div>`;
-      }
-    }
-
-    grid.innerHTML = html;
+    // Build source switcher buttons
+    btns.innerHTML = STREAM_FOLDERS.map((folder, i)=>
+      `<button onclick="document.getElementById('liveStreamFrame').src='https://dlstreams.top/${folder}/stream-${channelId}.php';document.querySelectorAll('#sourceBtns button').forEach(b=>b.style.background='rgba(0,180,60,.1)');this.style.background='rgba(0,180,60,.3)'"
+        style="background:${i===0?'rgba(0,180,60,.3)':'rgba(0,180,60,.1)'};border:1px solid rgba(0,180,60,.2);border-radius:6px;color:var(--g6);padding:4px 10px;font-size:.76rem;cursor:pointer;font-family:'DM Sans',sans-serif">
+        Source ${i+1}
+      </button>`
+    ).join('');
   }
 
-  function renderFootballFallback(){
-    const grid = document.getElementById('eventsGrid');
-    // Embed DaddyLive schedule page directly in an iframe as ultimate fallback
-    grid.innerHTML = `
-      <div style="grid-column:1/-1">
-        <div style="background:rgba(0,40,16,.5);border:1px solid var(--border);border-radius:16px;overflow:hidden">
-          <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-            <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">📡 Live Football Schedule</span>
-            <div style="display:flex;gap:8px">
-              <button onclick="document.getElementById('daddyIframe').src=document.getElementById('daddyIframe').src"
-                style="background:rgba(0,180,60,.15);border:1px solid rgba(0,200,80,.3);border-radius:8px;color:var(--g6);padding:5px 12px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif">
-                ↻ Refresh
-              </button>
-              <button onclick="window.open('${DADDY_BASE}','_blank')"
-                style="background:linear-gradient(135deg,var(--g3),var(--g4));border:none;border-radius:8px;color:#fff;padding:5px 12px;font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">
-                Open Full Site ↗
-              </button>
-            </div>
-          </div>
-          <iframe id="daddyIframe" src="${DADDY_BASE}"
-            style="width:100%;height:600px;border:none;display:block;background:#000"
-            allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation">
-          </iframe>
-        </div>
-      </div>`;
+  function closeStream(){
+    document.getElementById('streamPanel').style.display = 'none';
+    document.getElementById('liveStreamFrame').src = '';
   }
 
-  function isEventLive(timeStr, now){
-    if(!timeStr) return false;
-    try{
-      const [h,m]=timeStr.split(':').map(Number);
-      const eventMs=h*3600000+m*60000;
-      const nowMs=(now.getUTCHours())*3600000+(now.getUTCMinutes())*60000;
-      return nowMs>=eventMs && nowMs<eventMs+7200000; // within 2h window
-    } catch{ return false; }
-  }
-  function isEventSoon(timeStr, now){
-    if(!timeStr) return false;
-    try{
-      const [h,m]=timeStr.split(':').map(Number);
-      const eventMs=h*3600000+m*60000;
-      const nowMs=(now.getUTCHours())*3600000+(now.getUTCMinutes())*60000;
-      return eventMs>nowMs && eventMs-nowMs<3600000; // within 1h ahead
-    } catch{ return false; }
+  function refreshSchedule(){
+    const f = document.getElementById('scheduleFrame');
+    f.src = f.src;
   }
 
   /* ── F1 via OpenF1 API (public, no key) ── */
