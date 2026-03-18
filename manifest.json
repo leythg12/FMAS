@@ -1,0 +1,26 @@
+{
+  "name": "FMAS – Free Movies and Series",
+  "short_name": "FMAS",
+  "description": "Free movies, TV shows and live F1 streaming",
+  "start_url": "/FMAS/",
+  "display": "standalone",
+  "background_color": "#001a0a",
+  "theme_color": "#00e050",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192/001a0a/00e050?text=F",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://via.placeholder.com/512/001a0a/00e050?text=F",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "video"],
+  "screenshots": []
+}
