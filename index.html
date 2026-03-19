@@ -483,13 +483,33 @@ var SITE_PASSWORD = 'leyth2612'; // ← CHANGE THIS
 
   <!-- F1 -->
   <div class="page" id="page-f1">
-    <div class="section-pad" style="margin-bottom:16px">
+    <div class="section-pad" style="margin-bottom:12px">
       <div class="section-title" style="font-size:1.2rem">🏎️ Formula 1 Live</div>
     </div>
+
+    <!-- Provider tabs -->
     <div class="f1-sources" id="f1Sources"></div>
-    <div class="f1-player">
-      <div class="aspect"><iframe id="f1Frame" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe></div>
+
+    <!-- Main player -->
+    <div class="f1-player" id="f1PlayerWrap">
+      <div class="aspect">
+        <iframe id="f1Frame" allowfullscreen allow="autoplay; fullscreen; encrypted-media"></iframe>
+      </div>
     </div>
+
+    <!-- f1live.dpdns.org embed (shown when that provider is selected) -->
+    <div id="f1LiveEmbed" style="display:none;margin:0 16px;border:1px solid rgba(220,0,0,.2);border-radius:16px;overflow:hidden;background:#000">
+      <div style="aspect-ratio:16/9">
+        <iframe src="https://f1live.dpdns.org/stream"
+          id="f1LiveFrame"
+          allowfullscreen allow="autoplay; fullscreen; encrypted-media"
+          style="width:100%;height:100%;border:none;display:block"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation">
+        </iframe>
+      </div>
+    </div>
+
+    <!-- Schedule -->
     <div class="f1-schedule">
       <div class="section-title" style="margin-bottom:12px">📅 2025 Season</div>
       <div id="f1Schedule"></div>
@@ -1084,30 +1104,90 @@ function renderProfile(){
 }
 
 /* ── F1 ── */
-const F1_SOURCES=[
-  {name:'Sky F1 UK',   url:'https://dlstreams.top/stream/stream-60.php'},
-  {name:'Sky F1 DE',   url:'https://dlstreams.top/stream/stream-274.php'},
-  {name:'Sky F1 IT',   url:'https://dlstreams.top/stream/stream-577.php'},
-  {name:'Alt Source 1',url:'https://dlstreams.top/cast/stream-60.php'},
-  {name:'Alt Source 2',url:'https://dlstreams.top/watch/stream-60.php'},
+// Provider groups
+const F1_PROVIDERS = [
+  {
+    id: 'f1live',
+    label: '🏁 F1 Live (Best)',
+    type: 'embed', // full site embed
+    url: 'https://f1live.dpdns.org/stream',
+  },
+  {
+    id: 'sky',
+    label: '🏎️ Sky Sports F1',
+    type: 'channels',
+    channels: [
+      {name:'Sky F1 UK',   url:'https://dlstreams.top/stream/stream-60.php'},
+      {name:'Sky F1 DE',   url:'https://dlstreams.top/stream/stream-274.php'},
+      {name:'Sky F1 IT',   url:'https://dlstreams.top/stream/stream-577.php'},
+      {name:'Alt 1',       url:'https://dlstreams.top/cast/stream-60.php'},
+      {name:'Alt 2',       url:'https://dlstreams.top/watch/stream-60.php'},
+    ]
+  },
 ];
-let f1Loaded=false;
+
+let f1Loaded=false, activeF1Provider=null;
+
 function initF1(){
   if(f1Loaded) return; f1Loaded=true;
   const srcs=document.getElementById('f1Sources'); srcs.innerHTML='';
-  F1_SOURCES.forEach((src,i)=>{
+
+  F1_PROVIDERS.forEach((prov,i)=>{
     const btn=document.createElement('button');
     btn.className='f1-src-btn'+(i===0?' active':'');
-    btn.textContent=src.name;
+    btn.textContent=prov.label;
     btn.addEventListener('click',()=>{
       srcs.querySelectorAll('.f1-src-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('f1Frame').src=src.url;
+      selectF1Provider(prov);
     });
     srcs.appendChild(btn);
   });
-  document.getElementById('f1Frame').src=F1_SOURCES[0].url;
+
+  // Load first provider by default
+  selectF1Provider(F1_PROVIDERS[0]);
   loadF1Schedule();
+}
+
+function selectF1Provider(prov){
+  activeF1Provider = prov;
+  const mainPlayer  = document.getElementById('f1PlayerWrap');
+  const embedPlayer = document.getElementById('f1LiveEmbed');
+  const subBtns     = document.getElementById('f1SubSources');
+
+  if(prov.type === 'embed'){
+    // Show f1live.dpdns.org embedded
+    mainPlayer.style.display  = 'none';
+    embedPlayer.style.display = 'block';
+    document.getElementById('f1LiveFrame').src = prov.url;
+    if(subBtns) subBtns.remove();
+  } else if(prov.type === 'channels'){
+    // Show DaddyLive channel selector
+    mainPlayer.style.display  = 'block';
+    embedPlayer.style.display = 'none';
+    document.getElementById('f1LiveFrame').src = '';
+
+    // Build sub-source buttons
+    if(subBtns) subBtns.remove();
+    const wrap = document.createElement('div');
+    wrap.id = 'f1SubSources';
+    wrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 12px';
+    prov.channels.forEach((ch,i)=>{
+      const b = document.createElement('button');
+      b.className = 'f1-src-btn'+(i===0?' active':'');
+      b.style.fontSize = '.76rem';
+      b.textContent = ch.name;
+      b.addEventListener('click',()=>{
+        wrap.querySelectorAll('.f1-src-btn').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        document.getElementById('f1Frame').src = ch.url;
+      });
+      wrap.appendChild(b);
+    });
+    // Insert sub-sources after main provider tabs
+    document.getElementById('f1Sources').after(wrap);
+    document.getElementById('f1Frame').src = prov.channels[0].url;
+  }
 }
 async function loadF1Schedule(){
   const grid=document.getElementById('f1Schedule');
