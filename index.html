@@ -776,7 +776,7 @@ const IMG_SM   = 'https://image.tmdb.org/t/p/w342';
 const IMG_MD   = 'https://image.tmdb.org/t/p/w500';
 const IMG_BACK = 'https://image.tmdb.org/t/p/w1280';
 const VIDKING  = 'https://www.vidking.net/embed';
-const VK_COLOR = 'color=00e050&autoPlay=true&nextEpisode=true&episodeSelector=true';
+const VK_COLOR = 'color=00e050&autoPlay=true&autoplay=1&nextEpisode=true&episodeSelector=true';
 
 /* ── FIREBASE INIT ── */
 let auth, db, currentUser = null;
@@ -831,13 +831,14 @@ function makeCard(item, type, savedSeconds, totalSeconds){
     : '<div class="mcard-no-img">🎬</div>';
   div.innerHTML += '<div class="mcard-info"><div class="mcard-title">'+h(title)+'</div><div class="mcard-year">'+h(year)+'</div></div>';
   // Show progress bar & timestamp if we have watch data
-  if(savedSeconds > 0 && totalSeconds > 0){
-    const pct = Math.min(100, (savedSeconds/totalSeconds)*100);
-    div.innerHTML += '<div class="mcard-progress"><div class="mcard-progress-bar" style="width:'+pct+'%"></div></div>';
-    div.innerHTML += '<div class="mcard-timestamp">'+fmtTime(savedSeconds)+'</div>';
-  } else if(savedSeconds > 0){
-    // We have seconds but no duration — show time only
-    div.innerHTML += '<div class="mcard-timestamp">'+fmtTime(savedSeconds)+'</div>';
+  const dispSec = savedSeconds || 0;
+  const dispDur = totalSeconds || 0;
+  if(dispSec > 5){
+    if(dispDur > 0){
+      const pct = Math.min(100, (dispSec/dispDur)*100);
+      div.innerHTML += '<div class="mcard-progress"><div class="mcard-progress-bar" style="width:'+pct+'%"></div></div>';
+    }
+    div.innerHTML += '<div class="mcard-timestamp">'+fmtTime(dispSec)+'</div>';
   }
   div.addEventListener('click', () => openDetail(item, type));
   return div;
@@ -1109,16 +1110,20 @@ function openPlayer(url, name, item, type, episodeLabel){
   const existingEntry=watchHistory.find(w=>w.id===item?.id);
   const startSeconds=(existingEntry?.currentTime||0);
 
+  const assumed = type==='movie' ? 7200 : 2700;
+
+  // Save immediately when play starts so it shows in Continue Watching right away
+  if(item) saveProgress(item, type, Math.max(startSeconds, 1), assumed, episodeLabel);
+
   playerSaveTimer=setInterval(()=>{
     const elapsed=Math.floor((Date.now()-startedAt)/1000);
     playerCurrentTime=startSeconds+elapsed;
-    // Update progress bar (assume avg movie = 7200s, TV ep = 2700s)
-    const assumed=type==='movie'?7200:2700;
+    // Update progress bar
     const pct=Math.min(100,(playerCurrentTime/assumed)*100);
     document.getElementById('playerProgressFill').style.width=pct+'%';
-    // Save to history
+    // Save to Firestore every 15s
     if(item) saveProgress(item, type, playerCurrentTime, assumed, episodeLabel);
-  }, 15000); // save every 15s
+  }, 15000);
 }
 
 document.getElementById('playerBack').addEventListener('click',()=>{
@@ -1197,7 +1202,20 @@ async function loadUserData(uid){
   if(!db) return;
   try{
     const snap=await getDoc(doc(db,'users',uid));
-    if(snap.exists()){ const d=snap.data(); watchHistory=d.watchHistory||[]; watchlist=d.watchlist||[]; }
+    if(snap.exists()){
+      const d=snap.data();
+      // Normalize old entries: 'progress' (0-100%) → 'currentTime' in seconds
+      watchHistory=(d.watchHistory||[]).map(item=>{
+        if(item.currentTime===undefined && item.progress!==undefined){
+          // Old format stored progress as 0-100, assume 7200s movie / 2700s TV
+          const assumed = item.mediaType==='tv' ? 2700 : 7200;
+          item.currentTime = Math.floor((item.progress/100)*assumed);
+          item.duration    = assumed;
+        }
+        return item;
+      });
+      watchlist=d.watchlist||[];
+    }
   } catch(e){ console.warn('Firestore load:',e); }
 }
 
