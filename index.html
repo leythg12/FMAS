@@ -213,26 +213,6 @@ main{padding-top:calc(var(--header-h) + var(--safe-top));min-height:100vh}
   border:1px solid var(--border);border-radius:12px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:1.2rem}
 .btn-save.saved{background:rgba(0,180,60,.25);border-color:var(--g4)}
-.btn-dl{width:48px;height:48px;background:rgba(0,100,255,.1);
-  border:1px solid rgba(100,150,255,.25);border-radius:12px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
-  transition:background .2s;position:relative}
-.btn-dl:hover{background:rgba(0,100,255,.2)}
-.btn-dl.loading{opacity:.6;cursor:not-allowed}
-/* Download progress overlay */
-#dlOverlay{position:fixed;inset:0;z-index:700;background:rgba(0,10,4,.92);
-  backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center}
-#dlOverlay.show{display:flex}
-.dl-card{background:rgba(0,46,18,.9);border:1.5px solid rgba(0,200,80,.25);
-  border-radius:20px;padding:32px 28px;width:100%;max-width:340px;text-align:center}
-.dl-card h3{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:6px}
-.dl-card p{color:var(--muted);font-size:.85rem;margin-bottom:20px;line-height:1.6}
-.dl-progress-wrap{background:rgba(0,0,0,.4);border-radius:100px;height:8px;margin-bottom:12px;overflow:hidden}
-.dl-progress-bar{height:100%;background:linear-gradient(90deg,var(--g3),var(--g5));
-  border-radius:100px;width:0%;transition:width .3s}
-.dl-status{font-size:.8rem;color:var(--muted);margin-bottom:20px}
-.dl-cancel{background:none;border:1px solid var(--border);border-radius:8px;
-  padding:8px 20px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer}
 .tv-selectors{display:flex;gap:8px;margin-bottom:12px}
 .tv-sel{flex:1;padding:10px 12px;background:rgba(0,20,8,.8);
   border:1px solid var(--border);border-radius:10px;color:var(--text);
@@ -294,128 +274,6 @@ main{padding-top:calc(var(--header-h) + var(--safe-top));min-height:100vh}
   border-radius:8px;display:flex;align-items:center;gap:8px;transition:background .2s}
 .um-btn:hover{background:rgba(0,180,60,.1)}
 .um-btn.danger{color:#ff7070}
-
-/* ── DOWNLOAD ── */
-let dlCancelled = false;
-
-document.getElementById('dlCancel').addEventListener('click', () => {
-  dlCancelled = true;
-  hideDlOverlay();
-  showToast('Download cancelled');
-});
-
-function showDlOverlay(title){
-  dlCancelled = false;
-  document.getElementById('dlTitle').textContent = title;
-  document.getElementById('dlSubtitle').textContent = 'Resolving stream…';
-  document.getElementById('dlBar').style.width = '0%';
-  document.getElementById('dlStatus').textContent = 'Contacting server…';
-  document.getElementById('dlOverlay').classList.add('show');
-}
-function hideDlOverlay(){
-  document.getElementById('dlOverlay').classList.remove('show');
-}
-function setDlProgress(pct, status){
-  document.getElementById('dlBar').style.width = pct + '%';
-  document.getElementById('dlStatus').textContent = status;
-}
-
-async function startDownload(){
-  if(!activeItem) return;
-  const title = activeItem.title || activeItem.name || 'video';
-  const btn   = document.getElementById('detailDl');
-  btn.classList.add('loading');
-  showDlOverlay('Downloading ' + title);
-  closeDetail();
-
-  try {
-    // Step 1 — ask our Vercel API to resolve the m3u8 URL
-    const s = activeType === 'tv' ? (document.getElementById('sSel')?.value || 1) : null;
-    const e = activeType === 'tv' ? (document.getElementById('eSel')?.value || 1) : null;
-    const params = new URLSearchParams({ tmdb: activeItem.id, type: activeType });
-    if(s) params.set('season', s);
-    if(e) params.set('episode', e);
-
-    setDlProgress(5, 'Resolving stream URL…');
-    const resolveRes = await fetch(API_BASE + '/api/resolve?' + params.toString());
-    const resolveData = await resolveRes.json();
-
-    if(!resolveData.success || !resolveData.m3u8){
-      throw new Error(resolveData.error || 'Could not resolve stream URL');
-    }
-
-    if(dlCancelled) return;
-    setDlProgress(15, 'Got stream — fetching segments…');
-
-    // Step 2 — fetch the m3u8 playlist
-    const m3u8Url  = resolveData.m3u8;
-    const m3u8Base = m3u8Url.substring(0, m3u8Url.lastIndexOf('/') + 1);
-
-    const m3u8Res  = await fetch(m3u8Url, { headers: { Referer: resolveData.playerUrl || m3u8Url } });
-    const m3u8Text = await m3u8Res.text();
-
-    // Step 3 — parse segment URLs
-    const lines = m3u8Text.split('
-').map(l => l.trim()).filter(Boolean);
-    const segments = lines.filter(l => !l.startsWith('#') && l.length > 0)
-      .map(l => l.startsWith('http') ? l : m3u8Base + l);
-
-    if(!segments.length) throw new Error('No segments found in playlist');
-    if(dlCancelled) return;
-
-    // Step 4 — download all segments and concatenate
-    const totalSegs = segments.length;
-    const chunks    = [];
-
-    document.getElementById('dlSubtitle').textContent =
-      'Downloading ' + totalSegs + ' segments — please wait…';
-
-    for(let i = 0; i < totalSegs; i++){
-      if(dlCancelled) return;
-      const pct    = 15 + Math.round((i / totalSegs) * 80);
-      const segRes = await fetch(segments[i]);
-      if(!segRes.ok) continue;
-      const buf    = await segRes.arrayBuffer();
-      chunks.push(new Uint8Array(buf));
-      setDlProgress(pct, `Segment ${i+1} / ${totalSegs}`);
-    }
-
-    if(dlCancelled) return;
-    setDlProgress(97, 'Stitching file…');
-
-    // Step 5 — combine all chunks into one blob and trigger download
-    const totalLength = chunks.reduce((acc, c) => acc + c.length, 0);
-    const combined    = new Uint8Array(totalLength);
-    let offset = 0;
-    for(const chunk of chunks){
-      combined.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    const blob     = new Blob([combined], { type: 'video/mp4' });
-    const blobUrl  = URL.createObjectURL(blob);
-    const filename = title.replace(/[^a-z0-9]/gi, '_') + (s ? '_S'+s+'E'+e : '') + '.mp4';
-
-    const a = document.createElement('a');
-    a.href     = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-
-    setDlProgress(100, 'Done! ✅');
-    setTimeout(hideDlOverlay, 1500);
-    showToast('Download complete — ' + filename);
-
-  } catch(err){
-    hideDlOverlay();
-    showToast('Download failed: ' + err.message);
-    console.error('Download error:', err);
-  } finally {
-    document.getElementById('detailDl').classList.remove('loading');
-  }
-}
 
 /* ── TOAST ── */
 #toast{position:fixed;bottom:calc(var(--bottom-h) + var(--safe-bot) + 12px);
@@ -736,21 +594,6 @@ var SITE_PASSWORD = 'leyth2612'; // ← CHANGE THIS
   </div>
 </div>
 
-
-<!-- DOWNLOAD OVERLAY -->
-<div id="dlOverlay">
-  <div class="dl-card">
-    <div style="font-size:2rem;margin-bottom:12px">⬇️</div>
-    <h3 id="dlTitle">Preparing Download</h3>
-    <p id="dlSubtitle">Resolving stream URL…</p>
-    <div class="dl-progress-wrap">
-      <div class="dl-progress-bar" id="dlBar"></div>
-    </div>
-    <div class="dl-status" id="dlStatus">Starting…</div>
-    <button class="dl-cancel" id="dlCancel">Cancel</button>
-  </div>
-</div>
-
 <script type="module">
 import { initializeApp }  from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
 import { getAnalytics }   from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js';
@@ -776,7 +619,7 @@ const IMG_SM   = 'https://image.tmdb.org/t/p/w342';
 const IMG_MD   = 'https://image.tmdb.org/t/p/w500';
 const IMG_BACK = 'https://image.tmdb.org/t/p/w1280';
 const VIDKING  = 'https://www.vidking.net/embed';
-const VK_COLOR = 'color=00e050&autoPlay=true&nextEpisode=true&episodeSelector=true';
+const VK_P     = 'color=00e050&autoPlay=true&nextEpisode=true&episodeSelector=true';
 
 /* ── FIREBASE INIT ── */
 let auth, db, currentUser = null;
@@ -1069,14 +912,13 @@ function playActive(resume){
   let url, episodeLabel='';
   const startAt = resume ? (watchHistory.find(w=>w.id===activeItem.id)?.currentTime||0) : 0;
 
-  const progressParam = startAt > 10 ? '&progress=' + Math.floor(startAt) : '';
   if(activeType==='movie'){
-    url=VIDKING+'/movie/'+activeItem.id+'?'+VK_COLOR+progressParam;
+    url=VIDKING+'/movie/'+activeItem.id+'?'+VK_P+(startAt>10?'&t='+Math.floor(startAt):'');
   } else {
     const s=document.getElementById('sSel').value;
     const e=document.getElementById('eSel').value;
     episodeLabel='S'+s+' E'+e;
-    url=VIDKING+'/tv/'+activeItem.id+'/'+s+'/'+e+'?'+VK_COLOR+progressParam;
+    url=VIDKING+'/tv/'+activeItem.id+'/'+s+'/'+e+'?'+VK_P+(startAt>10?'&t='+Math.floor(startAt):'');
   }
   openPlayer(url, activeItem.title||activeItem.name||'', activeItem, activeType, episodeLabel);
 }
@@ -1369,128 +1211,6 @@ async function loadF1Schedule(){
       grid.appendChild(card);
     });
   } catch(e){ grid.innerHTML='<div style="color:var(--muted);font-size:.85rem">Could not load schedule.</div>'; }
-}
-
-/* ── DOWNLOAD ── */
-let dlCancelled = false;
-
-document.getElementById('dlCancel').addEventListener('click', () => {
-  dlCancelled = true;
-  hideDlOverlay();
-  showToast('Download cancelled');
-});
-
-function showDlOverlay(title){
-  dlCancelled = false;
-  document.getElementById('dlTitle').textContent = title;
-  document.getElementById('dlSubtitle').textContent = 'Resolving stream…';
-  document.getElementById('dlBar').style.width = '0%';
-  document.getElementById('dlStatus').textContent = 'Contacting server…';
-  document.getElementById('dlOverlay').classList.add('show');
-}
-function hideDlOverlay(){
-  document.getElementById('dlOverlay').classList.remove('show');
-}
-function setDlProgress(pct, status){
-  document.getElementById('dlBar').style.width = pct + '%';
-  document.getElementById('dlStatus').textContent = status;
-}
-
-async function startDownload(){
-  if(!activeItem) return;
-  const title = activeItem.title || activeItem.name || 'video';
-  const btn   = document.getElementById('detailDl');
-  btn.classList.add('loading');
-  showDlOverlay('Downloading ' + title);
-  closeDetail();
-
-  try {
-    // Step 1 — ask our Vercel API to resolve the m3u8 URL
-    const s = activeType === 'tv' ? (document.getElementById('sSel')?.value || 1) : null;
-    const e = activeType === 'tv' ? (document.getElementById('eSel')?.value || 1) : null;
-    const params = new URLSearchParams({ tmdb: activeItem.id, type: activeType });
-    if(s) params.set('season', s);
-    if(e) params.set('episode', e);
-
-    setDlProgress(5, 'Resolving stream URL…');
-    const resolveRes = await fetch(API_BASE + '/api/resolve?' + params.toString());
-    const resolveData = await resolveRes.json();
-
-    if(!resolveData.success || !resolveData.m3u8){
-      throw new Error(resolveData.error || 'Could not resolve stream URL');
-    }
-
-    if(dlCancelled) return;
-    setDlProgress(15, 'Got stream — fetching segments…');
-
-    // Step 2 — fetch the m3u8 playlist
-    const m3u8Url  = resolveData.m3u8;
-    const m3u8Base = m3u8Url.substring(0, m3u8Url.lastIndexOf('/') + 1);
-
-    const m3u8Res  = await fetch(m3u8Url, { headers: { Referer: resolveData.playerUrl || m3u8Url } });
-    const m3u8Text = await m3u8Res.text();
-
-    // Step 3 — parse segment URLs
-    const lines = m3u8Text.split('
-').map(l => l.trim()).filter(Boolean);
-    const segments = lines.filter(l => !l.startsWith('#') && l.length > 0)
-      .map(l => l.startsWith('http') ? l : m3u8Base + l);
-
-    if(!segments.length) throw new Error('No segments found in playlist');
-    if(dlCancelled) return;
-
-    // Step 4 — download all segments and concatenate
-    const totalSegs = segments.length;
-    const chunks    = [];
-
-    document.getElementById('dlSubtitle').textContent =
-      'Downloading ' + totalSegs + ' segments — please wait…';
-
-    for(let i = 0; i < totalSegs; i++){
-      if(dlCancelled) return;
-      const pct    = 15 + Math.round((i / totalSegs) * 80);
-      const segRes = await fetch(segments[i]);
-      if(!segRes.ok) continue;
-      const buf    = await segRes.arrayBuffer();
-      chunks.push(new Uint8Array(buf));
-      setDlProgress(pct, `Segment ${i+1} / ${totalSegs}`);
-    }
-
-    if(dlCancelled) return;
-    setDlProgress(97, 'Stitching file…');
-
-    // Step 5 — combine all chunks into one blob and trigger download
-    const totalLength = chunks.reduce((acc, c) => acc + c.length, 0);
-    const combined    = new Uint8Array(totalLength);
-    let offset = 0;
-    for(const chunk of chunks){
-      combined.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    const blob     = new Blob([combined], { type: 'video/mp4' });
-    const blobUrl  = URL.createObjectURL(blob);
-    const filename = title.replace(/[^a-z0-9]/gi, '_') + (s ? '_S'+s+'E'+e : '') + '.mp4';
-
-    const a = document.createElement('a');
-    a.href     = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-
-    setDlProgress(100, 'Done! ✅');
-    setTimeout(hideDlOverlay, 1500);
-    showToast('Download complete — ' + filename);
-
-  } catch(err){
-    hideDlOverlay();
-    showToast('Download failed: ' + err.message);
-    console.error('Download error:', err);
-  } finally {
-    document.getElementById('detailDl').classList.remove('loading');
-  }
 }
 
 /* ── TOAST ── */
